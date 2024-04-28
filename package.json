@@ -4,7 +4,8 @@
   "description": "プロセカ民営公園の専属Botです。",
   "main": "master.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "eslint": "npx eslint"
   },
   "repository": {
     "type": "git",
