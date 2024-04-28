@@ -22,6 +22,9 @@
     "log4js": "^6.9.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.1.1",
+    "eslint": "^9.1.1",
+    "globals": "^15.1.0",
     "prettier": "^3.2.5"
   }
 }
