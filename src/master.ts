@@ -3,18 +3,18 @@ require("dotenv").config();
 //log4jsをロード
 const logger = require("./logger");
 //fs,pathのロード
-const fs = require("node:fs");
-const path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 //Discord.jsをロード
-const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+import { Client, Collection, CommandInteraction, Events, GatewayIntentBits } from "discord.js";
+const client:any = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs
   .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".js"));
+  .filter((file:string) => file.endsWith(".js"));
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
@@ -27,7 +27,7 @@ for (const file of commandFiles) {
   }
 }
 
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction:any) => {
   // コマンドでなかった場合
   if (!interaction.isChatInputCommand()) return;
 
@@ -41,7 +41,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         {
           title: "エラー",
           description: `${interaction.commandName}というコマンド存在しません`,
-          color: "ff0000",
+          color: 0xff0000,
         },
       ],
     });
@@ -80,8 +80,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 //Ready
-client.once(Events.ClientReady, (c) => {
-  logger.info("ログイン成功 User=${c.user.tag}");
+client.once(Events.ClientReady, (client:Client) => {
+  if(client.user){
+    logger.info(`ログイン成功 User=${client.user.tag}`);
+  } else {
+    logger.error(`ログイン失敗`)
+  }
 });
 
 client.login(process.env.token);

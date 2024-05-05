@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -6,7 +6,7 @@ module.exports = {
     .setName("ping")
     // コマンドの説明文
     .setDescription("Pingの値を返します"),
-  async execute(interaction) {
+  async execute(interaction:CommandInteraction) {
     // 返信
     await interaction.reply({
       embeds: [
