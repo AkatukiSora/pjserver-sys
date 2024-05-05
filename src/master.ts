@@ -6,15 +6,22 @@ const logger = require("./logger");
 import fs from "node:fs";
 import path from "node:path";
 //Discord.jsをロード
-import { Client, Collection, CommandInteraction, Events, GatewayIntentBits } from "discord.js";
-const client:any = new Client({ intents: [GatewayIntentBits.Guilds] });
+import {
+  Client,
+  Collection,
+  CommandInteraction,
+  Events,
+  GatewayIntentBits,
+} from "discord.js";
+const client: any = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
+client.cooldowns = new Collection();
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs
   .readdirSync(commandsPath)
-  .filter((file:string) => file.endsWith(".js"));
+  .filter((file: string) => file.endsWith(".js"));
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
@@ -27,7 +34,7 @@ for (const file of commandFiles) {
   }
 }
 
-client.on(Events.InteractionCreate, async (interaction:any) => {
+client.on(Events.InteractionCreate, async (interaction: any) => {
   // コマンドでなかった場合
   if (!interaction.isChatInputCommand()) return;
 
@@ -80,11 +87,11 @@ client.on(Events.InteractionCreate, async (interaction:any) => {
 });
 
 //Ready
-client.once(Events.ClientReady, (client:Client) => {
-  if(client.user){
+client.once(Events.ClientReady, (client: Client) => {
+  if (client.user) {
     logger.info(`ログイン成功 User=${client.user.tag}`);
   } else {
-    logger.error(`ログイン失敗`)
+    logger.error(`ログイン失敗`);
   }
 });
 
