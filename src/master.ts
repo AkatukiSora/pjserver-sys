@@ -9,6 +9,7 @@ import path from "node:path";
 import { Client, Collection, CommandInteraction, Events, GatewayIntentBits } from "discord.js";
 const client:any = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
+client.cooldowns = new Collection();
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");

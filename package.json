@@ -2,7 +2,7 @@
   "name": "pjserver",
   "version": "1.0.0",
   "description": "プロセカ民営公園の専属Botです。",
-  "main": "master.js",
+  "main": "./dist/master.js",
   "scripts": {
     "test": "npx tsc --noEmit",
     "eslint": "npx eslint",
