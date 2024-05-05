@@ -8,7 +8,7 @@ const commands = [];
 // コマンドファイルを取得
 const commandFiles = fs
   .readdirSync("./commands")
-  .filter((file:string) => file.endsWith(".js"));
+  .filter((file: string) => file.endsWith(".js"));
 
 // 各コマンドのデータをjsonにしてデプロイする。
 for (const file of commandFiles) {

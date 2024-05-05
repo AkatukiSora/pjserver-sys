@@ -6,7 +6,7 @@ module.exports = {
     .setName("ping")
     // コマンドの説明文
     .setDescription("Pingの値を返します"),
-  async execute(interaction:CommandInteraction) {
+  async execute(interaction: CommandInteraction) {
     // 返信
     await interaction.reply({
       embeds: [
