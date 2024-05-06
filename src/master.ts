@@ -111,6 +111,7 @@ client.on(Events.InteractionCreate, async (interaction: any) => {
 client.once(Events.ClientReady, (client: Client) => {
   if (client.user) {
     logger.info(`ログイン成功 User=${client.user.tag}`);
+    client.user.setActivity("多分正常稼働中")
   } else {
     logger.error(`ログイン失敗`);
   }
