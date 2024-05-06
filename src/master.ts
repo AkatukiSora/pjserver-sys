@@ -37,8 +37,29 @@ for (const file of commandFiles) {
 client.on(Events.InteractionCreate, async (interaction: any) => {
   // コマンドでなかった場合
   if (!interaction.isChatInputCommand()) return;
-
   const command = interaction.client.commands.get(interaction.commandName);
+
+  const { cooldowns } = interaction.client;
+
+  if (!cooldowns.has(command.data.name)) {
+    cooldowns.set(command.data.name, new Collection());
+  }
+  const now = Date.now();
+  const timestamps = cooldowns.get(command.data.name);
+  const defaultCooldownDuration = 3;
+  const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) * 1_000;
+  if (timestamps.has(interaction.user.id)) {
+    const expirationTime = timestamps.get(interaction.user.id) + cooldownAmount;
+
+    if (now < expirationTime) {
+      logger.trace(`コマンドの実行を拒否 クールダウン中\nユーザー ${interaction.user.tag}:${interaction.user.id}\nコマンド ${command.data.name}`)
+      const expiredTimestamp = Math.round(expirationTime / 1_000);
+      return interaction.reply({ content: `\`${command.data.name}\`はクールダウン中です。\n 次に実行できるようになるのは <t:${expiredTimestamp}:R> です`, ephemeral: true });
+    }
+  }
+
+  timestamps.set(interaction.user.id, now);
+  setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount);
 
   // 一致するコマンドがなかった場合
   if (!command) {
