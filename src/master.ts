@@ -52,9 +52,14 @@ client.on(Events.InteractionCreate, async (interaction: any) => {
     const expirationTime = timestamps.get(interaction.user.id) + cooldownAmount;
 
     if (now < expirationTime) {
-      logger.trace(`コマンドの実行を拒否 クールダウン中\nユーザー ${interaction.user.tag}:${interaction.user.id}\nコマンド ${command.data.name}`)
+      logger.trace(
+        `コマンドの実行を拒否 クールダウン中\nユーザー ${interaction.user.tag}:${interaction.user.id}\nコマンド ${command.data.name}`,
+      );
       const expiredTimestamp = Math.round(expirationTime / 1_000);
-      return interaction.reply({ content: `\`${command.data.name}\`はクールダウン中です。\n 次に実行できるようになるのは <t:${expiredTimestamp}:R> です`, ephemeral: true });
+      return interaction.reply({
+        content: `\`${command.data.name}\`はクールダウン中です。\n 次に実行できるようになるのは <t:${expiredTimestamp}:R> です`,
+        ephemeral: true,
+      });
     }
   }
 
@@ -111,7 +116,7 @@ client.on(Events.InteractionCreate, async (interaction: any) => {
 client.once(Events.ClientReady, (client: Client) => {
   if (client.user) {
     logger.info(`ログイン成功 User=${client.user.tag}`);
-    client.user.setActivity("多分正常稼働中")
+    client.user.setActivity("多分正常稼働中");
   } else {
     logger.error(`ログイン失敗`);
   }
