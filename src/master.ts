@@ -189,11 +189,8 @@ process.on("uncaughtException", (err, origin) => {
   logger.fatal(`Caught exception: ${err}\n` + `Exception origin: ${origin}`);
   try {
     client.destroy();
-  } catch (e) {}
+  } catch (e) {
+    logger.error(e);
+  }
   setTimeout(process.exit, 1000, 1);
 });
-
-let test = "aaa";
-if ((test = "a")) {
-  console.log(test);
-}
