@@ -24,7 +24,6 @@ import {
 class MyClient extends Client {
   commands: Collection<string, MyCommand> = new Collection();
   cooldowns: Collection<string, Collection<string, number>> = new Collection();
-
 }
 
 const client = new MyClient({ intents: [GatewayIntentBits.Guilds] });
@@ -41,10 +40,10 @@ const commandFiles = fs
   .filter((file: string) => file.endsWith(".js"));
 
 interface MyCommand {
-  data: SlashCommandBuilder,
-  cooldown: number,
-  name: string,
-  Description: string,
+  data: SlashCommandBuilder;
+  cooldown: number;
+  name: string;
+  Description: string;
   execute: (interaction: CommandInteraction) => Promise<void>;
 }
 
@@ -125,7 +124,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         ],
       });
     } catch (error) {
-      logger.error(error)
+      logger.error(error);
     }
   }
 });
@@ -152,9 +151,9 @@ client.on("guildMemberAdd", async (member: GuildMember) => {
         content: `<@${member.user.id}>`,
         embeds: [embed],
         files: [attachment],
-      })
+      });
     } else {
-      logger.error("welcomeチャンネルが見つかりませんでした")
+      logger.error("welcomeチャンネルが見つかりませんでした");
     }
   } else {
     console.error("指定されたチャンネルがテキストチャンネルではありません");
