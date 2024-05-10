@@ -11,27 +11,31 @@ import {
   Client,
   Collection,
   CommandInteraction,
-  CommandOptionSubOptionResolvableType,
   EmbedBuilder,
   Events,
   GatewayIntentBits,
   GuildMember,
-  Interaction,
-  SlashCommandAttachmentOption,
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-class MyClient extends Client {
-  commands: Collection<string, MyCommand> = new Collection();
-  cooldowns: Collection<string, Collection<string, number>> = new Collection();
+
+declare module "discord.js" {
+  interface Client {
+    commands: Collection<string, MyCommand>;
+    cooldowns: Collection<string, Collection<string, number>>;
+  }
 }
 
-const client = new MyClient({ intents: [GatewayIntentBits.Guilds] });
+/*class MyClient extends Client {
+  commands: Collection<string, MyCommand> = new Collection();
+  cooldowns: Collection<string, Collection<string, number>> = new Collection();
+}*/
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
 import * as functions from "./functions";
-import { Channel } from "node:diagnostics_channel";
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");
@@ -59,14 +63,12 @@ for (const file of commandFiles) {
 }
 
 //interactionしたときに実行
-/*interface MyCommandInteraction extends Interaction{
-  commands: Collection<string, MyCommand>
-}*/
+
 client.on(Events.InteractionCreate, async (interaction) => {
   // コマンドでなかった場合
   if (!interaction.isChatInputCommand()) return;
   const command = interaction.client.commands.get(interaction.commandName);
-
+  if (!command) return;
   const { cooldowns } = interaction.client;
 
   if (!cooldowns.has(command.data.name)) {
@@ -74,10 +76,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
   const now = Date.now();
   const timestamps = cooldowns.get(command.data.name);
+  if (!timestamps) return;
   const defaultCooldownDuration = 3;
   const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) * 1_000;
   if (timestamps.has(interaction.user.id)) {
-    const expirationTime = timestamps.get(interaction.user.id) + cooldownAmount;
+    const tmptimestamp = timestamps.get(interaction.user.id);
+    if(!tmptimestamp)return;
+    const expirationTime = tmptimestamp + cooldownAmount;
 
     if (now < expirationTime) {
       logger.trace(
