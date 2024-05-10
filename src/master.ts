@@ -13,7 +13,6 @@ import {
   EmbedBuilder,
   Events,
   GatewayIntentBits,
-  GuildMember,
   Interaction,
   SlashCommandBuilder,
   TextChannel,
@@ -34,7 +33,9 @@ interface MyCommand {
   execute: (interaction: Interaction) => Promise<void>;
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+});
 client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
@@ -130,7 +131,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 //welcome画像の生成と送信
 
-client.on("guildMemberAdd", async (member: GuildMember) => {
+client.on("guildMemberAdd", async (member) => {
+  logger.info("useradd!!!");
   const attachment = new AttachmentBuilder(
     await functions.welcomeimage(
       member.user.displayName,
@@ -155,7 +157,7 @@ client.on("guildMemberAdd", async (member: GuildMember) => {
       logger.error("welcomeチャンネルが見つかりませんでした");
     }
   } else {
-    console.error("指定されたチャンネルがテキストチャンネルではありません");
+    logger.error("指定されたチャンネルがテキストチャンネルではありません");
   }
 });
 
