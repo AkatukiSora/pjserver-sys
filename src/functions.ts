@@ -1,30 +1,41 @@
-import { createCanvas, loadImage, registerFont } from "canvas";
-import { AttachmentBuilder } from "discord.js";
+import { Canvas, createCanvas, loadImage, registerFont } from "canvas";
+import { BufferResolvable } from "discord.js";
+import path from "path";
 
-exports.isBotOwner = function (userID: string): boolean {
+type isBotOwner = (userID: string) => boolean;
+export const isBotOwner = function (userID: string): boolean {
   return userID == require("./config.json").botOwnerID;
 };
 
-exports.welcomeimage = async function (
+type welcomeimage = (
   userName: string,
-  userID: string,
-  userAvater: string,
+  userAvatarURL: string,
+) => BufferResolvable;
+export const welcomeimage = async function (
+  userName: string,
+  userAvatarURL: string,
 ) {
-  const applyText = (canvas: any, text: string) => {
+  const applyText = (canvas: Canvas, text: string) => {
     const context = canvas.getContext("2d");
     let fontSize = 70;
     do {
-      context.font = `${(fontSize -= 5)}px Gothic`;
+      context.font = `${(fontSize -= 5)}px "Gothic"`;
     } while (context.measureText(text).width > canvas.width - 300);
     return context.font;
   };
+  //フォントの読み込み
+  registerFont(path.resolve("./resource/Fonts/NotoSerifJP-Black.otf"), {
+    family: "Noto_Serif",
+  });
+  registerFont(path.resolve("./resource/Fonts/Roboto-Black.ttf"), {
+    family: "Roboto",
+  });
+  registerFont(path.resolve("./resource/Fonts/-pr6n-r.otf"), {
+    family: "Gothic",
+  });
   //キャンバスづくり
   const canvas = createCanvas(700, 250);
   const context = canvas.getContext("2d");
-  //フォントの読み込み
-  registerFont("./Fonts/NotoSerifJP-Black.otf", { family: "Noto_Serif" });
-  registerFont("./Fonts/Roboto-Black.ttf", { family: "Roboto" });
-  registerFont("./Fonts/-pr6n-r.otf", { family: "Gothic" });
   //背景画像の読み込み
   const file_url = "./resource/png/join.png";
   const background = await loadImage(file_url);
@@ -35,7 +46,7 @@ exports.welcomeimage = async function (
   //周りに境界線を引く
   context.strokeRect(0, 0, canvas.width, canvas.height);
   // Slightly smaller text placed above the member's display name
-  context.font = "28px Roboto";
+  context.font = '28px "Roboto"';
   context.fillStyle = "#ffffff";
   context.fillText(
     "Welcome to the server,",
@@ -57,11 +68,9 @@ exports.welcomeimage = async function (
   //切り取り
   context.clip();
   //アイコンを読み込み
-  const avatar = await loadImage(
-    `https://cdn.discordapp.com/avatars/${userID}/${userAvater}.png`,
-  );
+  const avatar = await loadImage(userAvatarURL);
   //アイコンの描画
   context.drawImage(avatar, 25, 25, 200, 200);
   //画像を返却
-  return canvas.toBuffer("image/png");
+  return canvas.toBuffer();
 };

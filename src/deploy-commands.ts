@@ -1,8 +1,8 @@
 //envのロード
 require("dotenv").config();
-const { REST, Routes } = require("discord.js");
-const fs = require("node:fs");
-const logger = require("./logger");
+import { REST, Routes } from "discord.js";
+import fs from "node:fs";
+import logger from "./logger";
 
 const commands = [];
 // コマンドファイルを取得
@@ -17,7 +17,7 @@ for (const file of commandFiles) {
 }
 
 // restをロード
-const rest = new REST({ version: "10" }).setToken(process.env.token);
+const rest = new REST({ version: "10" }).setToken(process.env.token as string);
 // デプロイ
 (async () => {
   try {
@@ -26,13 +26,13 @@ const rest = new REST({ version: "10" }).setToken(process.env.token);
     );
 
     // The put method is used to fully refresh all commands in the guild with the current set
-    const data = await rest.put(
+    const data = (await rest.put(
       Routes.applicationGuildCommands(
-        process.env.clientID,
-        process.env.guildID,
+        process.env.clientID as string,
+        process.env.guildID as string,
       ),
       { body: commands },
-    );
+    )) as Array<string>;
 
     logger.info(
       `Successfully reloaded ${data.length} application (/) commands.`,

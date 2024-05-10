@@ -1,6 +1,6 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     // コマンドの名前
     .setName("ping")
@@ -16,7 +16,7 @@ module.exports = {
         },
       ],
     });
-    let msg = await interaction.fetchReply();
+    const msg = await interaction.fetchReply();
     await interaction.editReply({
       embeds: [
         {

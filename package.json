@@ -4,9 +4,9 @@
   "description": "プロセカ民営公園の専属Botです。",
   "main": "./dist/master.js",
   "scripts": {
-    "test": "npx tsc -p . --noEmit",
-    "build": "npx tsc -p .",
-    "eslint": "npx eslint",
+    "test": "npx tsc -p . --noEmit && npx eslint .",
+    "build": "npx prettier -w . && npx eslint . ; npx tsc -p .",
+    "lint": "npx eslint .",
     "format:c": "npx prettier -c .",
     "format:w": "npx prettier -w ."
   },
@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
+    "@types/eslint": "^8.56.10",
     "@types/node": "^20.12.8",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
