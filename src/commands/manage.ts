@@ -1,7 +1,7 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import * as f from "../functions";
 
-export default {
+module.exports = {
   cooldown: 10,
   data: new SlashCommandBuilder()
     // コマンドの名前

@@ -5,7 +5,7 @@
   "main": "./dist/master.js",
   "scripts": {
     "test": "npx tsc -p . --noEmit && npx eslint .",
-    "build": "npx prettier -w . && npx eslint . ; npx tsc -p .",
+    "build": "npx prettier -w . && npx eslint . && npx tsc -p .",
     "lint": "npx eslint .",
     "format:c": "npx prettier -c .",
     "format:w": "npx prettier -w ."

@@ -1,7 +1,7 @@
 //envのロード
 require("dotenv").config();
 //log4jsをロード
-import logger from "./logger";
+import logger from "./logger.js";
 //fs,pathのロード
 import fs from "node:fs";
 import path from "node:path";
@@ -10,11 +10,11 @@ import {
   AttachmentBuilder,
   Client,
   Collection,
-  CommandInteraction,
   EmbedBuilder,
   Events,
   GatewayIntentBits,
   GuildMember,
+  Interaction,
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
@@ -26,16 +26,19 @@ declare module "discord.js" {
   }
 }
 
-/*class MyClient extends Client {
-  commands: Collection<string, MyCommand> = new Collection();
-  cooldowns: Collection<string, Collection<string, number>> = new Collection();
-}*/
+interface MyCommand {
+  data: SlashCommandBuilder;
+  cooldown: number;
+  name: string;
+  Description: string;
+  execute: (interaction: Interaction) => Promise<void>;
+}
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
-import * as functions from "./functions";
+import * as functions from "./functions.js";
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");
@@ -43,17 +46,9 @@ const commandFiles = fs
   .readdirSync(commandsPath)
   .filter((file: string) => file.endsWith(".js"));
 
-interface MyCommand {
-  data: SlashCommandBuilder;
-  cooldown: number;
-  name: string;
-  Description: string;
-  execute: (interaction: CommandInteraction) => Promise<void>;
-}
-
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);
-  const command = import(filePath) as unknown as MyCommand;
+  const command = require(filePath); // as unknown as MyCommand;
   // 取得した.jsファイル内の情報から、コマンドと名前をListenner-botに対して設定
   if ("data" in command && "execute" in command) {
     client.commands.set(command.data.name, command);
@@ -61,7 +56,6 @@ for (const file of commandFiles) {
     logger.warn(`${filePath}に"data" または"execute" がありません。`);
   }
 }
-
 //interactionしたときに実行
 
 client.on(Events.InteractionCreate, async (interaction) => {

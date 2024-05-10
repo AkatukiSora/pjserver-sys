@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import * as f from "../functions";
 
-export default {
+module.exports = {
   data: new SlashCommandBuilder()
     // コマンドの名前
     .setName("test")
