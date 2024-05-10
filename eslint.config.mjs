@@ -11,7 +11,7 @@ export default [
   eslintPluginPrettier,
   {
     rules: {
-      "@typescript-eslint/no-var-requires": "warn",
+      "@typescript-eslint/no-var-requires": "off",
     },
   },
 ];
