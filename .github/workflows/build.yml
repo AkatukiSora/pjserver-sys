@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: ["master"]
+  schedule:
+    - cron: "23 1 * * 4"
+
+jobs:
+  Build:
+    name: Build test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: npm install
+        run: 
+          npm install
+
+      - name: Run compile
+        run: npx tsc
+            .
+            -p .
+            --noEmit
