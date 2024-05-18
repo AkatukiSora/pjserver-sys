@@ -1,17 +1,7 @@
 import { Canvas, createCanvas, loadImage, registerFont } from "canvas";
-import { BufferResolvable } from "discord.js";
 import path from "path";
 
-type isBotOwner = (userID: string) => boolean;
-export const isBotOwner = function (userID: string): boolean {
-  return userID == require("./config.json").botOwnerID;
-};
-
-type welcomeimage = (
-  userName: string,
-  userAvatarURL: string,
-) => BufferResolvable;
-export const welcomeimage = async function (
+export default async function (
   userName: string,
   userAvatarURL: string,
 ) {

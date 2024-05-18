@@ -1,5 +1,5 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import * as f from "../functions";
+import isBotOwner from "../functions/isBotOwner";
 
 module.exports = {
   cooldown: 10,
@@ -10,7 +10,7 @@ module.exports = {
     .setDescription("bot管理用コマンドです"),
   async execute(interaction: CommandInteraction) {
     // 返信
-    if (f.isBotOwner(interaction.user.id)) {
+    if (isBotOwner(interaction.user.id)) {
       await interaction.reply({
         embeds: [
           {
