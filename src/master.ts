@@ -39,7 +39,8 @@ const client = new Client({
 client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
-import * as functions from "./functions.js";
+import welcomeimage from "./functions/welcomeimage.js";
+//import isBotOwner from "./functions/isBotOwner.js"
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
 const commandsPath = path.join(__dirname, "commands");
@@ -134,7 +135,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on("guildMemberAdd", async (member) => {
   logger.info("useradd!!!");
   const attachment = new AttachmentBuilder(
-    await functions.welcomeimage(
+    await welcomeimage(
       member.user.displayName,
       member.user.displayAvatarURL({ extension: "png" }),
     ),

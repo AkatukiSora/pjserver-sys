@@ -4,7 +4,7 @@ import {
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import * as f from "../functions";
+import welcomeimage from "../functions/welcomeimage";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ module.exports = {
     // 返信
     //interaction.deferReply();
     const attachment = new AttachmentBuilder(
-      await f.welcomeimage(
+      await welcomeimage(
         interaction.user.displayName,
         interaction.user.displayAvatarURL({ extension: "png" }),
       ),
