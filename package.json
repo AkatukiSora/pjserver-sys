@@ -4,11 +4,10 @@
   "description": "プロセカ民営公園の専属Botです。",
   "main": "./dist/master.js",
   "scripts": {
-    "test": "npx tsc -p . --noEmit && npx eslint .",
-    "build": "npx prettier -w . && npx eslint . && npx tsc -p .",
-    "lint": "npx eslint .",
-    "format:c": "npx prettier -c .",
-    "format:w": "npx prettier -w ."
+    "test": "npx gulp test",
+    "build": "npx gulp build",
+    "lint": "npx gulp eslint",
+    "format": "npx gulp prettier"
   },
   "repository": {
     "type": "git",
@@ -24,6 +23,7 @@
     "canvas": "^2.11.2",
     "discord.js": "^14.15.1",
     "dotenv": "^16.4.5",
+    "gulp": "^5.0.0",
     "log4js": "^6.9.1",
     "socket.io": "^4.7.5"
   },

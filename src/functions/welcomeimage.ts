@@ -1,10 +1,7 @@
 import { Canvas, createCanvas, loadImage, registerFont } from "canvas";
 import path from "path";
 
-export default async function (
-  userName: string,
-  userAvatarURL: string,
-) {
+export default async function (userName: string, userAvatarURL: string) {
   const applyText = (canvas: Canvas, text: string) => {
     const context = canvas.getContext("2d");
     let fontSize = 70;
@@ -63,4 +60,4 @@ export default async function (
   context.drawImage(avatar, 25, 25, 200, 200);
   //画像を返却
   return canvas.toBuffer();
-};
+}
