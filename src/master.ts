@@ -109,13 +109,17 @@ client.once(Events.ClientReady, (client: Client) => {
 });
 
 //環境が設定されているならそのままサーバーを実行
-if (process.env.mode == "0" || process.env.mode == "1" || process.env.mode == "2") {
+if (
+  process.env.mode == "0" ||
+  process.env.mode == "1" ||
+  process.env.mode == "2"
+) {
   logger.info(`mode: ${process.env.mode}`);
   client.login(process.env.token);
 } else {
   logger.fatal("実行環境が指定されていないか不正です");
   process.exit(1);
-};
+}
 
 //エラーログ
 client.on(Events.Warn, (warn: string) => {
