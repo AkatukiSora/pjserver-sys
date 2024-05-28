@@ -1,4 +1,5 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import runMode from "../functions/runMode";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -8,11 +9,12 @@ module.exports = {
     .setDescription("Pingの値を返します"),
   async execute(interaction: CommandInteraction) {
     // 返信
+    const mode = runMode();
     await interaction.reply({
       embeds: [
         {
           title: "ping",
-          description: "API Endpoint Ping: ...",
+          description: `${mode}\nAPI Endpoint Ping: ...`,
         },
       ],
     });
@@ -21,7 +23,7 @@ module.exports = {
       embeds: [
         {
           title: "ping",
-          description: `API Endpoint Ping: ${msg.createdTimestamp - interaction.createdTimestamp}ms`,
+          description: `${mode}\nAPI Endpoint Ping: ${msg.createdTimestamp - interaction.createdTimestamp}ms`,
         },
       ],
     });
