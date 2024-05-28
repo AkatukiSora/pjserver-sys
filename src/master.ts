@@ -17,7 +17,7 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-
+//discord.jsの型定義を追加
 declare module "discord.js" {
   interface Client {
     commands: Collection<string, MyCommand>;
@@ -32,13 +32,14 @@ interface MyCommand {
   Description: string;
   execute: (interaction: Interaction) => Promise<void>;
 }
-
+//discord clientを設定
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
+//ファイル分けされたモジュールをロード
 import welcomeimage from "./functions/welcomeimage.js";
 import processInteraction from "./interaction.js";
 //import isBotOwner from "./functions/isBotOwner.js"
@@ -107,7 +108,14 @@ client.once(Events.ClientReady, (client: Client) => {
   }
 });
 
-client.login(process.env.token);
+//環境が設定されているならそのままサーバーを実行
+if (process.env.mode == "0" || process.env.mode == "1" || process.env.mode == "2") {
+  logger.info(`mode: ${process.env.mode}`);
+  client.login(process.env.token);
+} else {
+  logger.fatal("実行環境が指定されていないか不正です");
+  process.exit(1);
+};
 
 //エラーログ
 client.on(Events.Warn, (warn: string) => {
