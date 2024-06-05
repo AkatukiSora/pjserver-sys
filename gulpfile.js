@@ -30,15 +30,14 @@ gulp.task("create-dist", function (done) {
   done();
 });
 
-function copy_files() {
-  return gulp
-    .src(["src/**/*", "src/**/.*", "!src/**/*.ts", "!src/**/*.js"])
-    .pipe(gulp.dest("dist"));
-}
+gulp.task("copy_files", function (done) {
+  copyFolderRecursiveSync("src", "dist");
+  done();
+});
 
 gulp.task(
   "prebuild",
-  gulp.series("eslint", "prettier", "create-dist", copy_files),
+  gulp.series("eslint", "prettier", "create-dist", "copy_files"),
 );
 
 gulp.task("compile", function (done) {
@@ -66,3 +65,54 @@ gulp.task("postbuild", function (done) {
 gulp.task("build", gulp.series("prebuild", "compile", "postbuild"));
 
 gulp.task("test", gulp.series("eslint", "compile_test"));
+
+// ======================================
+
+// ファイルをコピーする関数
+function copyFileSync(source, target) {
+  let targetFile = target;
+
+  // ターゲットがディレクトリの場合、ファイル名を付け加える
+  if (fs.existsSync(target)) {
+    if (fs.lstatSync(target).isDirectory()) {
+      targetFile = path.join(target, path.basename(source));
+    }
+  }
+  if (/.*\.ts$/.test(targetFile)) {
+    return;
+  }
+  // バイナリモードでファイルを読み込む
+  let sourceData = fs.readFileSync(source);
+
+  // バイナリモードでファイルを書き込む
+  fs.writeFileSync(targetFile, sourceData, { encoding: null });
+}
+
+// ディレクトリを再帰的にコピーする関数
+function copyFolderRecursiveSync(source, target) {
+  let files = [];
+
+  // ソース内のファイルを取得
+  if (fs.existsSync(source) && fs.lstatSync(source).isDirectory()) {
+    files = fs.readdirSync(source);
+  }
+
+  // ターゲットディレクトリが存在しない場合は作成する
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target);
+  }
+
+  // ファイルをコピーする
+  files.forEach(function (file) {
+    let curSource = path.join(source, file);
+    let curTarget = path.join(target, file);
+
+    if (fs.lstatSync(curSource).isDirectory()) {
+      // ディレクトリの場合は再帰的に呼び出す
+      copyFolderRecursiveSync(curSource, curTarget);
+    } else {
+      // ファイルの場合は単純にコピーする
+      copyFileSync(curSource, curTarget);
+    }
+  });
+}
