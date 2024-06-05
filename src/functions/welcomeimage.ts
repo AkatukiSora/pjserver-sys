@@ -11,13 +11,16 @@ export default async function (userName: string, userAvatarURL: string) {
     return context.font;
   };
   //フォントの読み込み
-  registerFont(path.resolve("../resource/Fonts/NotoSerifJP-Black.otf"), {
-    family: "Noto_Serif",
-  });
-  registerFont(path.resolve("../resource/Fonts/Roboto-Black.ttf"), {
+  registerFont(
+    path.resolve(__dirname, "../resource/Fonts/NotoSerifJP-Black.otf"),
+    {
+      family: "Noto_Serif",
+    },
+  );
+  registerFont(path.resolve(__dirname, "../resource/Fonts/Roboto-Black.ttf"), {
     family: "Roboto",
   });
-  registerFont(path.resolve("../resource/Fonts/-pr6n-r.otf"), {
+  registerFont(path.resolve(__dirname, "../resource/Fonts/-pr6n-r.otf"), {
     family: "Gothic",
   });
   //キャンバスづくり
