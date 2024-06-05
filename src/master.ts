@@ -1,7 +1,7 @@
 //envのロード
 require("dotenv").config();
 //log4jsをロード
-import logger from "./logger.js";
+import logger from "./logger";
 //fs,pathのロード
 import fs from "node:fs";
 import path from "node:path";
@@ -40,8 +40,8 @@ client.commands = new Collection<string, MyCommand>();
 client.cooldowns = new Collection<string, Collection<string, number>>();
 
 //ファイル分けされたモジュールをロード
-import welcomeimage from "./functions/welcomeimage.js";
-import processInteraction from "./interaction.js";
+import welcomeimage from "./functions/welcomeimage";
+import processInteraction from "./interaction";
 //import isBotOwner from "./functions/isBotOwner.js"
 
 // commandsフォルダから、.jsで終わるファイルのみを取得
