@@ -1,9 +1,8 @@
 FROM ubuntu:22.04 as base
 SHELL [ "/bin/bash", "-c" ]
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y  --no-cache --no-install-recommends \
     curl\
-    ca-certificates&&\
-    apt-get clean
+    ca-certificates
 RUN curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s lts &&\
     npm i -g npm
 
