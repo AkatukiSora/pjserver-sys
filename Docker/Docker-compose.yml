@@ -4,5 +4,5 @@ services:
     env_file:
       - ./Env
     volumes:
-      -./logs:/root/pjserver-sys/logs:rw
+      - ./logs:/root/pjserver-sys/logs:rw
     
