@@ -1,5 +1,7 @@
 //envのロード
-require("dotenv").config();
+if(process.env.isDocker != "1"){
+  require("dotenv").config();
+}
 //log4jsをロード
 import logger from "./logger";
 //fs,pathのロード
@@ -137,3 +139,6 @@ process.on("uncaughtException", (err, origin) => {
   }
   setTimeout(process.exit, 1000, 1);
 });
+
+
+//終了処理
