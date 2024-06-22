@@ -1,0 +1,8 @@
+services:
+  app: 
+    build: ./Dockerfile
+    env_file:
+      - ./Env
+    volumes:
+      -./logs:/root/pjserver-sys/logs:rw
+    
