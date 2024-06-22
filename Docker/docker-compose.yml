@@ -1,3 +1,5 @@
+version: "3"
+
 services:
   app:
     build: .
@@ -5,3 +7,9 @@ services:
       - ./.env
     volumes:
       - ./logs:/root/pjserver-sys/logs:rw
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: 1
