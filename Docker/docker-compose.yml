@@ -1,12 +1,14 @@
 version: "3"
-
+name: pjserver-sys
+volumes:
+  logs:
 services:
   app:
     build: .
     env_file:
       - ./.env
     volumes:
-      - ./logs:/pjserver-sys/logs:rw
+      - logs:/pjserver-sys/logs:rw
     restart: always
     deploy:
       resources:
