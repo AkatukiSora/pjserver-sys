@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    env_file:
+      - ./Env
+    volumes:
+      - ./logs:/root/pjserver-sys/logs:rw

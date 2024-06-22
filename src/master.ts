@@ -1,5 +1,7 @@
 //envのロード
-require("dotenv").config();
+if(process.env.isDocker != "1"){
+  require("dotenv").config();
+}
 //log4jsをロード
 import logger from "./logger";
 //fs,pathのロード
@@ -136,4 +138,15 @@ process.on("uncaughtException", (err, origin) => {
     logger.error(e);
   }
   setTimeout(process.exit, 1000, 1);
+});
+
+
+//終了処理
+process.on("SIGTERM", () => {
+  try {
+    client.destroy();
+    logger.info("サーバーを停止します。シグナルによる終了処理です。")
+  } catch (e) {
+    logger.error(e);
+  }
 });
