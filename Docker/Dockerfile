@@ -25,10 +25,12 @@ RUN rm package.json
 RUN rm package-lock.json
 
 FROM base as runner
-RUN groupadd -g 1000 node && \
-    useradd -s /bin/bash -u 1000 -g 1000 node
 COPY --chown=node:node --from=builder /pjserver-sys/dist /pjserver-sys
 WORKDIR /pjserver-sys
+RUN groupadd -g 1000 node && \
+    useradd -s /bin/bash -u 1000 -g 1000 node &&\
+    mkdir /pjserver-sys/logs &&\
+    chown node:node -R /pjserver-sys/logs
 ENV NODE_ENV=production
 USER node
 CMD [ "dumb-init", "node", "./master.js" ]
