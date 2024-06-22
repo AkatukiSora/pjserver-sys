@@ -145,6 +145,7 @@ process.on("uncaughtException", (err, origin) => {
 process.on("SIGTERM", () => {
   try {
     client.destroy();
+    logger.info("サーバーを停止します。シグナルによる終了処理です。")
   } catch (e) {
     logger.error(e);
   }
