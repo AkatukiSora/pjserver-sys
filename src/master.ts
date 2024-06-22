@@ -142,3 +142,10 @@ process.on("uncaughtException", (err, origin) => {
 
 
 //終了処理
+process.on("SIGTERM", () => {
+  try {
+    client.destroy();
+  } catch (e) {
+    logger.error(e);
+  }
+});
