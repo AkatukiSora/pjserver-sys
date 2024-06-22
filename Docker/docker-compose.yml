@@ -6,7 +6,7 @@ services:
     env_file:
       - ./.env
     volumes:
-      - ./logs:/root/pjserver-sys/logs:rw
+      - ./logs:/pjserver-sys/logs:rw
     restart: always
     deploy:
       resources:
