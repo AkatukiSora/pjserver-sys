@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
     git
 RUN git clone https://github.com/AkatukiSora/pjserver-sys.git
 WORKDIR /pjserver-sys
-RUN git checkout dev
+RUN git checkout master
 RUN npm ci
 RUN npm run build
 RUN cp ./package.json ./dist/
