@@ -12,4 +12,4 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: 1
+          cpus: "1"
