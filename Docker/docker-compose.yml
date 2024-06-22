@@ -1,6 +1,6 @@
 services:
   app:
-    build: ./Dockerfile
+    build: .
     env_file:
       - ./Env
     volumes:
