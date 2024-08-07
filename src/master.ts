@@ -1,5 +1,5 @@
 //envのロード
-if(process.env.isDocker != "1"){
+if (process.env.isDocker != "1") {
   require("dotenv").config();
 }
 //log4jsをロード
@@ -137,16 +137,17 @@ process.on("uncaughtException", (err, origin) => {
   } catch (e) {
     logger.error(e);
   }
-  setTimeout(process.exit, 1000, 1);
+  setTimeout(process.exit, 5000, 1);
 });
-
 
 //終了処理
 process.on("SIGTERM", () => {
   try {
     client.destroy();
-    logger.info("サーバーを停止します。シグナルによる終了処理です。")
+    logger.info("サーバーを停止します。シグナルによる終了処理です。");
   } catch (e) {
     logger.error(e);
+    logger.error("サーバーの停止処理でエラーが発生しました")
+    setTimeout(process.exit, 5000, 1);
   }
 });

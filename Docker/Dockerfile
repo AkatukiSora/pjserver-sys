@@ -1,3 +1,4 @@
+#プロジェクトルートにコピーしてから使用
 FROM ubuntu:22.04 AS base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends\
