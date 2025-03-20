@@ -1,7 +1,6 @@
-# pjserver-sys
+~~プロセカ民営公園専属botのソースコードです。~~
+# このコードは現在使われていません
+新しいリポジトリで新システムを開発する予定です
 
-[![CodeQL](https://github.com/AkatukiSora/pjserver-sys/actions/workflows/CodeQL.yml/badge.svg?branch=master)](https://github.com/AkatukiSora/pjserver-sys/actions/workflows/CodeQL.yml) [![CodeCheck](https://github.com/AkatukiSora/pjserver-sys/actions/workflows/codecheck.yml/badge.svg?branch=master)](https://github.com/AkatukiSora/pjserver-sys/actions/workflows/codecheck.yml)
-
-プロセカ民営公園専属botのソースコードです。
-OSSみたいな扱いにしておくのでこのコードを使いたいとかいう物好きがいればBSDライセンスと常識の範囲内で好きに使って下さい。
-TypeJS使ってます
+理由は以下の通りです
+過去の自分が書いたくそコードを保守したくない
