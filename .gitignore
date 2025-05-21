@@ -1,3 +1,7 @@
+# Created by https://www.toptal.com/developers/gitignore/api/node,yarn
+# Edit at https://www.toptal.com/developers/gitignore?templates=node,yarn
+
+### Node ###
 # Logs
 logs
 *.log
@@ -89,7 +93,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist/
+dist
 
 # Gatsby files
 .cache/
@@ -102,7 +106,6 @@ dist/
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -123,8 +126,36 @@ dist/
 .vscode-test
 
 # yarn v2
-.yarn/cache
+#.yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+### Node Patch ###
+# Serverless Webpack directories
+.webpack/
+
+# Optional stylelint cache
+
+# SvelteKit build / generate output
+.svelte-kit
+
+### yarn ###
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+
+.yarn/*
+!.yarn/releases
+!.yarn/patches
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+# if you are NOT using Zero-installs, then:
+# comment the following lines
+# !.yarn/cache
+
+# and uncomment the following lines
+.pnp.*
+
+# End of https://www.toptal.com/developers/gitignore/api/node,yarn
