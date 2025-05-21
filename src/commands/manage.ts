@@ -1,5 +1,5 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import isBotOwner from "../functions/isBotOwner";
+import isBotOwner from "../functions/isBotOwner.js";
 
 module.exports = {
   cooldown: 10,

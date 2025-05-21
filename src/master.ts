@@ -3,7 +3,7 @@ if (process.env.isDocker != "1") {
   require("dotenv").config();
 }
 //log4jsをロード
-import logger from "./logger";
+import logger from "./logger.js";
 //fs,pathのロード
 import fs from "node:fs";
 import path from "node:path";
@@ -83,7 +83,7 @@ client.on("guildMemberAdd", async (member) => {
     .setDescription(
       `ようこそ！<@${member.user.id}>さん！\n\n※サーバーガイドはチャンネル一覧の一番上にあります\n\nサーバーガイドに従ってやるべきことを片付けましょう\n特に <#942837557807419482> で挨拶をすることはコミュニティになじむ第一歩です\n気楽にいきましょう`,
     );
-  const targetChannel = member.guild.channels.cache.get("853904783000469535");
+  const targetChannel = member.guild.channels.cache.get("853904783000469535"); //DOTO: 変数として外部から注入させる
   if (targetChannel instanceof TextChannel) {
     if (targetChannel) {
       await targetChannel.send({
@@ -147,7 +147,7 @@ process.on("SIGTERM", () => {
     logger.info("サーバーを停止します。シグナルによる終了処理です。");
   } catch (e) {
     logger.error(e);
-    logger.error("サーバーの停止処理でエラーが発生しました")
+    logger.error("サーバーの停止処理でエラーが発生しました");
     setTimeout(process.exit, 5000, 1);
   }
 });

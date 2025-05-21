@@ -2,7 +2,7 @@
 require("dotenv").config();
 import { REST, Routes } from "discord.js";
 import fs from "node:fs";
-import logger from "./logger";
+import logger from "./logger.js";
 
 const commands = [];
 // コマンドファイルを取得

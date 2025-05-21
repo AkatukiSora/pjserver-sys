@@ -4,7 +4,7 @@ import {
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import welcomeimage from "../functions/welcomeimage";
+import welcomeimage from "../functions/welcomeimage.js";
 
 module.exports = {
   data: new SlashCommandBuilder()
