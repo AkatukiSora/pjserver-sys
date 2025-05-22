@@ -6,7 +6,3 @@
 Docker/
 node_modules/
 .gitignore
-
-# Yarn Zero-install関連
-.yarn/
-.pnp.*

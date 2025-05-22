@@ -1,35 +1,8 @@
-FROM ubuntu:22.04 AS base
-SHELL [ "/bin/bash", "-c" ]
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl\
-    ca-certificates\
-    curl&&\
-    apt-get clean &&\
-    rm -rf /var/lib/apt/lists/* &&\
-    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s lts
+FROM oven/bun AS build
+WORKDIR /app
+COPY . .
+RUN bun install --production && bun build --compile --target=bun-linux-x64 ./src/master.ts --outfile=app
 
-FROM base AS builder
-WORKDIR /pjserver-sys
-RUN npm install -g yarn
-COPY package.json yarn.lock ./
-RUN yarn install
-COPY ./ ./
-RUN yarn run build
-RUN cp ./package.json ./dist/
-RUN cp ./yarn.lock ./dist/
-WORKDIR /pjserver-sys/dist
-RUN yarn install --production
-RUN rm package.json yarn.lock
-
-FROM base AS runner
-RUN groupadd -g 1000 node && \
-    useradd -s /bin/bash -u 1000 -g 1000 node
-COPY --chown=node:node --from=builder /pjserver-sys/dist /pjserver-sys
-WORKDIR /pjserver-sys
-RUN groupadd -g 1000 node && \
-    useradd -s /bin/bash -u 1000 -g 1000 node &&\
-    mkdir -p /pjserver-sys/logs &&\
-    chown node:node -R /pjserver-sys/logs
-ENV NODE_ENV=production
-USER node
-CMD [ "dumb-init", "node", "./master.js" ]
+FROM gcr.io/distroless/base:nonroot
+COPY --from=build /app /app
+ENTRYPOINT ["/app/app"]
