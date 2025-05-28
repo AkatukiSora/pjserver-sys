@@ -1,8 +1,9 @@
 # Default ignore
+*
 
-.github
-.vscode
-.git
-Docker/
-node_modules/
-.gitignore
+# Required items
+! src/
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig*.json

@@ -1,153 +1,154 @@
-//envのロード
-if (process.env.isDocker != "1") {
-  require("dotenv").config();
-}
-//log4jsをロード
+// 環境変数のロード
+import "dotenv/config";
+// ロガーモジュールのロード
 import logger from "./logger.js";
-//fs,pathのロード
-import fs from "node:fs";
-import path from "node:path";
-//Discord.jsをロード
+// Discord.jsの必要なモジュールをロード
 import {
   AttachmentBuilder,
   Client,
-  Collection,
   EmbedBuilder,
   Events,
   GatewayIntentBits,
-  Interaction,
-  SlashCommandBuilder,
+  GuildMember,
   TextChannel,
+  Interaction, // Interaction型をインポート
 } from "discord.js";
-//discord.jsの型定義を追加
-declare module "discord.js" {
-  interface Client {
-    commands: Collection<string, MyCommand>;
-    cooldowns: Collection<string, Collection<string, number>>;
-  }
-}
+// ファイル分けされたカスタムモジュールをロード
+import welcomeimage from "./functions/welcomeimage.js";
+import processInteraction, { loadCommands } from "./interaction.js";
 
-interface MyCommand {
-  data: SlashCommandBuilder;
-  cooldown: number;
-  name: string;
-  Description: string;
-  execute: (interaction: Interaction) => Promise<void>;
-}
-//discord clientを設定
+/**
+ * Discordクライアントを設定します。
+ * 必要なインテント（GatewayIntentBits）を指定して、ボットが特定のイベントを受信できるようにします。
+ */
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
-client.commands = new Collection<string, MyCommand>();
-client.cooldowns = new Collection<string, Collection<string, number>>();
 
-//ファイル分けされたモジュールをロード
-import welcomeimage from "./functions/welcomeimage";
-import processInteraction from "./interaction";
-//import isBotOwner from "./functions/isBotOwner.js"
+// クライアントにコマンドをロード
+loadCommands(client);
 
-// commandsフォルダから、.jsで終わるファイルのみを取得
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file: string) => file.endsWith(".js"));
-
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const command = require(filePath);
-  // 取得した.jsファイル内の情報から、コマンドと名前をListenner-botに対して設定
-  if ("data" in command && "execute" in command) {
-    client.commands.set(command.data.name, command);
-  } else {
-    logger.warn(`${filePath}に"data" または"execute" がありません。`);
-  }
-}
-//interactionしたときに実行
-
-client.on(Events.InteractionCreate, async (interaction) => {
-  processInteraction(interaction);
+/**
+ * インタラクションイベントリスナー。
+ * Discordからのインタラクション（スラッシュコマンドなど）を処理します。
+ */
+client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+  // processInteraction関数にインタラクションを渡して処理を委譲
+  await processInteraction(interaction);
 });
 
-//welcome画像の生成と送信
-
-client.on("guildMemberAdd", async (member) => {
+/**
+ * ギルドメンバー追加イベントリスナー。
+ * 新しいメンバーがサーバーに参加した際にウェルカム画像を生成し、指定されたチャンネルに送信します。
+ */
+client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
+  // ウェルカム画像を生成
   const attachment = new AttachmentBuilder(
     await welcomeimage(
       member.user.displayName,
       member.user.displayAvatarURL({ extension: "png" }),
     ),
   ).setName("welcome-image.png");
+
+  // ウェルカムメッセージのEmbedを作成
   const embed = new EmbedBuilder()
     .setTitle("welcome to プロセカ民営公園")
     .setImage("attachment://welcome-image.png")
     .setDescription(
       `ようこそ！<@${member.user.id}>さん！\n\n※サーバーガイドはチャンネル一覧の一番上にあります\n\nサーバーガイドに従ってやるべきことを片付けましょう\n特に <#942837557807419482> で挨拶をすることはコミュニティになじむ第一歩です\n気楽にいきましょう`,
     );
-  const targetChannel = member.guild.channels.cache.get("853904783000469535"); //DOTO: 変数として外部から注入させる
+
+  // ウェルカムメッセージを送信するチャンネルを取得 (TODO: 変数として外部から注入させる)
+  const targetChannel = member.guild.channels.cache.get("853904783000469535");
+
+  // チャンネルが存在し、かつテキストチャンネルであるかを確認
   if (targetChannel instanceof TextChannel) {
-    if (targetChannel) {
-      await targetChannel.send({
-        content: `<@${member.user.id}>`,
-        embeds: [embed],
-        files: [attachment],
-      });
-    } else {
-      logger.error("welcomeチャンネルが見つかりませんでした");
-    }
+    await targetChannel.send({
+      content: `<@${member.user.id}>`,
+      embeds: [embed],
+      files: [attachment],
+    });
   } else {
-    logger.error("指定されたチャンネルがテキストチャンネルではありません");
+    // チャンネルが見つからない、またはテキストチャンネルでない場合のエラーログ
+    logger.error(
+      "指定されたwelcomeチャンネルが見つからないか、テキストチャンネルではありません。",
+    );
   }
 });
 
-//Ready
-client.once(Events.ClientReady, (client: Client) => {
-  if (client.user) {
-    logger.info(`ログイン成功 User=${client.user.tag}`);
-    client.user.setActivity("多分正常稼働中");
+/**
+ * クライアント準備完了イベントリスナー。
+ * ボットがDiscordに正常にログインし、準備が完了した際に一度だけ実行されます。
+ */
+client.once(Events.ClientReady, (readyClient: Client) => {
+  if (readyClient.user) {
+    logger.info(`ログイン成功: User=${readyClient.user.tag}`);
+    readyClient.user.setActivity("多分正常稼働中"); // ボットのステータスを設定
   } else {
-    logger.fatal(`ログイン失敗`);
-    process.exit(1);
+    logger.fatal("ログイン失敗: クライアントユーザーが見つかりませんでした。");
+    process.exit(1); // ログイン失敗時はプロセスを終了
   }
 });
 
-//環境が設定されているならそのままサーバーを実行
+/**
+ * 環境モードに基づいてDiscordボットにログインします。
+ * `process.env.mode` が '0', '1', '2' のいずれかである場合にログインを試みます。
+ */
 if (
-  process.env.mode == "0" ||
-  process.env.mode == "1" ||
-  process.env.mode == "2"
+  process.env.mode === "0" ||
+  process.env.mode === "1" ||
+  process.env.mode === "2"
 ) {
-  logger.info(`mode: ${process.env.mode}`);
+  logger.info(`ボット起動モード: ${process.env.mode}`);
   client.login(process.env.token);
 } else {
-  logger.fatal("実行環境が指定されていないか不正です");
+  logger.fatal("実行環境が指定されていないか不正です。プロセスを終了します。");
   process.exit(1);
 }
 
-//エラーログ
+/**
+ * 警告イベントリスナー。
+ * Discord.jsからの警告をログに出力します。
+ */
 client.on(Events.Warn, (warn: string) => {
-  logger.warn(warn);
-});
-client.on(Events.Error, (error: Error) => {
-  logger.error(error);
-});
-process.on("uncaughtException", (err, origin) => {
-  logger.fatal(`Caught exception: ${err}\n` + `Exception origin: ${origin}`);
-  try {
-    client.destroy();
-  } catch (e) {
-    logger.error(e);
-  }
-  setTimeout(process.exit, 5000, 1);
+  logger.warn(`[WARN] Discord.js警告: ${warn}`);
 });
 
-//終了処理
+/**
+ * エラーイベントリスナー。
+ * Discord.jsからのエラーをログに出力します。
+ */
+client.on(Events.Error, (error: Error) => {
+  logger.error(`[ERROR] Discord.jsエラー: ${error.message}`, error);
+});
+
+/**
+ * 未処理の例外イベントリスナー。
+ * キャッチされなかった例外が発生した場合に、ログに出力し、安全にプロセスを終了しようとします。
+ */
+process.on("uncaughtException", (err: Error, origin: string) => {
+  logger.fatal(
+    `[FATAL] 未処理の例外をキャッチ: ${err.message}\n例外発生元: ${origin}`,
+    err,
+  );
+  try {
+    client.destroy(); // クライアントを破棄して接続をクリーンアップ
+  } catch (e) {
+    logger.error(`[ERROR] クライアント破棄中にエラーが発生: ${e}`);
+  }
+  setTimeout(() => process.exit(1), 5000); // 5秒後にプロセスを終了
+});
+
+/**
+ * SIGTERMシグナルイベントリスナー。
+ * プロセスが終了シグナルを受信した際に、安全にシャットダウン処理を行います。
+ */
 process.on("SIGTERM", () => {
   try {
-    client.destroy();
-    logger.info("サーバーを停止します。シグナルによる終了処理です。");
+    client.destroy(); // クライアントを破棄
+    logger.info("サーバーを停止します。シグナルによる正常終了処理です。");
   } catch (e) {
-    logger.error(e);
-    logger.error("サーバーの停止処理でエラーが発生しました");
-    setTimeout(process.exit, 5000, 1);
+    logger.error(`[ERROR] サーバー停止処理中にエラーが発生: ${e}`);
+    setTimeout(() => process.exit(1), 5000); // 5秒後にプロセスを終了
   }
 });

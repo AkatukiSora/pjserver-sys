@@ -1,8 +1,0 @@
-FROM oven/bun AS build
-WORKDIR /app
-COPY . .
-RUN bun install --production && bun build --compile --target=bun-linux-x64 ./src/master.ts --outfile=app
-
-FROM gcr.io/distroless/base:nonroot
-COPY --from=build /app /app
-ENTRYPOINT ["/app/app"]

@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import welcomeimage from "../functions/welcomeimage.js";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     // コマンドの名前
     .setName("test")

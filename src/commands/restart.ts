@@ -1,7 +1,7 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import logger from "../logger";
+import logger from "../logger.js";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     // コマンドの名前
     .setName("restart")

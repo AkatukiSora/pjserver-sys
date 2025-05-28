@@ -1,7 +1,7 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import runMode from "../functions/runMode";
+import runMode from "../functions/runMode.js";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     // コマンドの名前
     .setName("ping")
