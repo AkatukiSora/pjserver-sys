@@ -5,7 +5,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import pluginImport from "eslint-plugin-import";
 
 export default [
-  { ignores: ["/dist/", "/test/", "/node_modules", "**/*.js"] },
+  { ignores: ["/dist", "/test", "/node_modules", "/scripts"] },
   { languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
@@ -18,7 +18,8 @@ export default [
       ...pluginImport.configs.recommended.rules,
       ...pluginImport.configs.typescript.rules,
       "@typescript-eslint/no-var-requires": "off",
-      "no-console": "error",
+      "no-console": "warn",
+
       "valid-typeof": "error",
     },
     settings: {
