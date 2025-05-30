@@ -1,9 +1,12 @@
 # Builder stage
 FROM node:22-slim@sha256:2f3571619daafc6b53232ebf2fcc0817c1e64795e92de317c1684a915d13f1a5 AS builder
 
+# Set environment variables
+ENV TINI_VERSION=v0.19.0
+ENV HUSKY=0
+
 
 # Add Tini
-ENV TINI_VERSION=v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 
 WORKDIR /build
@@ -12,15 +15,15 @@ WORKDIR /build
 COPY package.json pnpm-lock.yaml ./
 
 # Enable Corepack and install dependencies using pnpm
-RUN corepack enable && pnpm install
+RUN corepack enable && pnpm install --ignore-scripts
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the application
-RUN pnpm build
+RUN pnpm build:prod
 # Add this line to prune devDependencies
-RUN pnpm prune --prod
+RUN pnpm prune --prod --ignore-scripts
 
 # Uncomment the following line to compile the application into a single binary using nexe script
 # RUN pnpm run package

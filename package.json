@@ -10,12 +10,12 @@
   },
   "scripts": {
     "build": "pnpm run copy-static && tsc -p tsconfig.json && tsc-alias",
-    "build:prod": "pnpm run copy-static && tsc -p tsconfig.build.json --sourceMap false && tsc-alias",
+    "build:prod": "pnpm run copy-static && tsc -p tsconfig.build.json && tsc-alias",
     "lint": "eslint ./src --ext .ts",
     "lint:fix": "eslint ./src --ext .ts --fix",
     "format": "prettier ./src --check",
     "format:fix": "prettier ./src --write",
-    "copy-static": "node -e \"require('fs-extra').copySync('src','dist',{filter:f=>require('path').extname(f)!=='.ts'})\"",
+    "copy-static": "tsx scripts/copy-static.ts",
     "prepare": "husky"
   },
   "repository": {
