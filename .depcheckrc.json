@@ -1,0 +1,8 @@
+{
+  "ignores": [
+    "@types/eslint",
+    "eslint-import-resolver-node",
+    "eslint-import-resolver-typescript",
+    "depcheck"
+  ]
+}
