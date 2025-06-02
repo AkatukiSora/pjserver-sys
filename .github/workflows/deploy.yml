@@ -21,6 +21,7 @@ jobs:
       contents: write
       packages: write
       security-events: write
+      attestations: write # attestationの作成に必要な権限を追加
 
     name: Docker Build and Push
     runs-on: ubuntu-latest
