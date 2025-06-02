@@ -10,10 +10,6 @@ on:
 env:
   DOCKER_IMAGE_NAME: akatukisora/pjserver-sys
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  # cancel-in-progress: true # デプロイは重なってもすべて実行されるようにキャンセルを無効化
-
 jobs:
   docker-build-and-push:
     permissions:
@@ -48,13 +44,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Set Docker Image Tag for Scout
-        run: |
-          # Docker metaで生成されたタグの最初のものを取得
-          # tags出力はカンマ区切りなので、最初のタグを取得
-          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | cut -d ',' -f 1)
-          echo "DOCKER_SCOUT_IMAGE_TAG=$FIRST_TAG" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         id: build-and-push
