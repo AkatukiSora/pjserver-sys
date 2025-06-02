@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - master
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
@@ -96,12 +94,14 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
 
-  build-and-deploy-docker-image:
-    name: Build, Scan, and Deploy Docker Image
+  docker-build-test:
+    name: Docker Build Test
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     permissions:
-      id-token: write
-      contents: write
+      contents: read
+      packages: write # Dockerイメージをビルドするために必要
+      security-events: write # SARIFファイルをアップロードするために必要
 
     steps:
       - name: Checkout code
@@ -117,42 +117,24 @@ jobs:
           images: ${{ env.DOCKER_IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long,prefix=
           labels: |
             org.opencontainers.image.title=${{ github.event.repository.name }}
             org.opencontainers.image.description=Docker image for ${{ github.event.repository.name }}
             org.opencontainers.image.url=${{ github.event.repository.url }}
             org.opencontainers.image.source=${{ github.event.repository.url }}
-            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
-            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=MIT
 
-      - name: Log in to Docker Hub
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Build and push Docker image
-        id: build-and-push
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            VERSION=${{ github.ref_name }}
-            GIT_COMMIT=${{ github.sha }}
-            GIT_BRANCH=${{ github.ref_name }}
-            GIT_TAG=${{ github.ref_name }}
-            GIT_REPOSITORY=${{ github.repository }}
-            GIT_REPOSITORY_URL=${{ github.repositoryUrl }}
 
       - name: Run Docker Scout
         uses: docker/scout-action@v1
@@ -160,17 +142,10 @@ jobs:
           image: ${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
           command: cves
           only-severities: critical,high
-          format: sarif # SARIF形式で出力
-          output: scout-results.sarif # 出力ファイル名
+          format: sarif
+          output: scout-results.sarif
 
       - name: Upload SARIF results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: scout-results.sarif # アップロードするSARIFファイル
-
-      - name: Generate and attest provenance
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.DOCKER_IMAGE_NAME }}
-          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          sarif_file: scout-results.sarif
