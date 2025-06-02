@@ -1,14 +1,13 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - master
   pull_request:
     branches:
       - main
       - master
+
+env:
+  DOCKER_IMAGE_NAME: akatukisora/pjserver-sys
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +15,8 @@ concurrency:
 
 jobs:
   lint-and-typecheck:
+    permissions:
+      contents: read
     name: Lint and Type Check
     runs-on: ubuntu-latest
     steps:
@@ -51,20 +52,10 @@ jobs:
 
   codeql-analysis:
     name: Analyze (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
-      # required for all workflows
       security-events: write
-
-      # required to fetch internal or private CodeQL packs
       packages: read
-
-      # only required for workflows in private repositories
       actions: read
       contents: read
 
@@ -76,43 +67,16 @@ jobs:
             build-mode: none
           - language: javascript-typescript
             build-mode: none
-        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Add any setup steps before running the `github/codeql-action/init` action.
-      # This includes steps like installing compilers or runtimes (`actions/setup-node`
-      # or others). This is typically only required for manual builds.
-      # - name: Setup runtime (example)
-      #   uses: actions/setup-example@v1
-
-      # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          # If you wish to specify custom queries, you can do so here or in a config file.
-          # By default, queries listed here will override any specified in a config file.
-          # Prefix the list here with "+" to use these queries and those in the config file.
 
-          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-          # queries: security-extended,security-and-quality
-
-      # If the analyze step fails for one of the languages you are analyzing with
-      # "We were unable to automatically build your code", modify the matrix above
-      # to set the build mode to "manual" for that language. Then modify this step
-      # to build your code.
-      # ℹ️ Command-line programs to run using the OS shell.
-      # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
       - if: matrix.build-mode == 'manual'
         shell: bash
         run: |
@@ -132,9 +96,47 @@ jobs:
     name: Docker Build Test
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write # PRのコメントを投稿するために必要
+      security-events: write # SARIFファイルをアップロードするために必要
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub for Docker Scout
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN_RO }}
+
       - name: Build Docker image
-        run: docker build .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Docker Scout
+        uses: docker/scout-action@v1
+        with:
+          command: cves,recommendations
+          to-latest: true
+          ignore-base: true
+          ignore-unchanged: true
+          only-fixed: true
+          image: local://${{ env.DOCKER_IMAGE_NAME }}:test
+          only-severities: critical,high
+          sarif-file: scout-results.sarif
+
+      - name: Upload SARIF results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scout-results.sarif
