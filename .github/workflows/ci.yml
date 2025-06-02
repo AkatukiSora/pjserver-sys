@@ -1,10 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - master
   pull_request:
     branches:
       - main
@@ -19,6 +15,8 @@ concurrency:
 
 jobs:
   lint-and-typecheck:
+    permissions:
+      contents: read
     name: Lint and Type Check
     runs-on: ubuntu-latest
     steps:
@@ -100,7 +98,7 @@ jobs:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
-      packages: write # Dockerイメージをビルドするために必要
+      pull-requests: write # PRのコメントを投稿するために必要
       security-events: write # SARIFファイルをアップロードするために必要
 
     steps:
@@ -110,40 +108,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Log in to Docker Hub for Docker Scout
+        uses: docker/login-action@v3
         with:
-          images: ${{ env.DOCKER_IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,format=long,prefix=
-          labels: |
-            org.opencontainers.image.title=${{ github.event.repository.name }}
-            org.opencontainers.image.description=Docker image for ${{ github.event.repository.name }}
-            org.opencontainers.image.url=${{ github.event.repository.url }}
-            org.opencontainers.image.source=${{ github.event.repository.url }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=MIT
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN_RO }}
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run Docker Scout
         uses: docker/scout-action@v1
         with:
-          image: ${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
-          command: cves
+          command: cves,recommendations
+          to-latest: true
+          ignore-base: true
+          ignore-unchanged: true
+          only-fixed: true
+          image: local://${{ env.DOCKER_IMAGE_NAME }}:test
           only-severities: critical,high
-          format: sarif
-          output: scout-results.sarif
+          sarif-file: scout-results.sarif
 
       - name: Upload SARIF results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
