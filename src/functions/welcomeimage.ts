@@ -1,66 +1,127 @@
-import { Canvas, createCanvas, loadImage, registerFont } from "canvas";
-import path from "path";
+import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
+import fetch from "node-fetch";
+import fs from "fs-extra";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import logger from "../logger.js"; // ロガーをインポート
 
-export default async function (userName: string, userAvatarURL: string) {
-  const applyText = (canvas: Canvas, text: string) => {
-    const context = canvas.getContext("2d");
-    let fontSize = 70;
-    do {
-      context.font = `${(fontSize -= 5)}px "Gothic"`;
-    } while (context.measureText(text).width > canvas.width - 300);
-    return context.font;
-  };
-  //フォントの読み込み
-  registerFont(
-    path.resolve(__dirname, "../resource/Fonts/NotoSerifJP-Black.otf"),
-    {
-      family: "Noto_Serif",
-    },
-  );
-  registerFont(path.resolve(__dirname, "../resource/Fonts/Roboto-Black.ttf"), {
-    family: "Roboto",
-  });
-  registerFont(path.resolve(__dirname, "../resource/Fonts/-pr6n-r.otf"), {
-    family: "Gothic",
-  });
-  //キャンバスづくり
-  const canvas = createCanvas(700, 250);
-  const context = canvas.getContext("2d");
-  //背景画像の読み込み
-  const file_url = "./resource/png/join.png";
-  const background = await loadImage(file_url);
-  //画像をキャンバスの大きさに引き伸ばし
-  context.drawImage(background, 0, 0, canvas.width, canvas.height);
-  //境界線の色を指定
-  context.strokeStyle = "#0099ff";
-  //周りに境界線を引く
-  context.strokeRect(0, 0, canvas.width, canvas.height);
-  // Slightly smaller text placed above the member's display name
-  context.font = '28px "Roboto"';
-  context.fillStyle = "#ffffff";
-  context.fillText(
-    "Welcome to the server,",
-    canvas.width / 2.5,
-    canvas.height / 3.5,
-  );
+// ESM環境での __filename と __dirname の代替
+// 現在のファイルのURLからファイルパスとディレクトリパスを生成します。
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  // Add an exclamation point here and below
-  context.font = applyText(canvas, `${userName}!`);
-  context.fillStyle = "#ffffff";
-  context.fillText(`${userName}!`, canvas.width / 2.5, canvas.height / 1.8);
+// フォントと背景画像のファイルパスを定義
+// `path.join` を使用して、OSに依存しないパスを構築します。
+const fontRobotoPath = path.join(
+  __dirname,
+  "..", // src/functions から src へ
+  "resource",
+  "Fonts",
+  "Roboto-Black.ttf",
+);
+const fontNotoSansPath = path.join(
+  __dirname,
+  "..", // src/functions から src へ
+  "resource",
+  "Fonts",
+  "NotoSansJP-Black.ttf",
+);
+const backgroundPath = path.join(
+  __dirname,
+  "..", // src/functions から src へ
+  "resource",
+  "png",
+  "join.png",
+);
 
-  //描画の開始
-  context.beginPath();
-  //円を作成
-  context.arc(125, 125, 100, 0, Math.PI * 2, true);
-  //描画の停止
-  context.closePath();
-  //切り取り
-  context.clip();
-  //アイコンを読み込み
-  const avatar = await loadImage(userAvatarURL);
-  //アイコンの描画
-  context.drawImage(avatar, 25, 25, 200, 200);
-  //画像を返却
-  return canvas.toBuffer();
+// グローバルフォントの登録
+// 画像生成に使用するカスタムフォントをシステムに登録します。
+logger.info(`Registering font Roboto from: ${fontRobotoPath}`);
+GlobalFonts.registerFromPath(fontRobotoPath, "Roboto");
+logger.info(`Registering font Noto_Sans from: ${fontNotoSansPath}`);
+GlobalFonts.registerFromPath(fontNotoSansPath, "Noto_Sans");
+
+/**
+ * ユーザーのウェルカム画像を生成します。
+ * 新しいメンバーがDiscordサーバーに参加した際に表示されるカスタム画像を動的に作成します。
+ *
+ * @param userName - ウェルカム画像に表示するユーザー名。
+ * @param userAvatarURL - ユーザーのアバター画像のURL。このURLから画像がフェッチされ、画像に埋め込まれます。
+ * @returns 生成された画像のBuffer（PNG形式）。このBufferはDiscordに直接送信できます。
+ */
+export default async function generateWelcomeImage(
+  userName: string,
+  userAvatarURL: string,
+): Promise<Buffer> {
+  const width = 700; // キャンバスの幅
+  const height = 250; // キャンバスの高さ
+
+  // 画像キャンバスを作成し、2Dコンテキストを取得
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
+  // 背景画像を読み込み、キャンバスに描画
+  logger.info(`Loading background image from: ${backgroundPath}`);
+  try {
+    const backgroundBuffer = await fs.readFile(backgroundPath);
+    logger.debug(
+      `Background image bytes length: ${backgroundBuffer.byteLength}`,
+    );
+    const background = await loadImage(backgroundBuffer); // Bufferから直接loadImage
+    ctx.drawImage(background, 0, 0, width, height);
+    logger.info("Background image drawn successfully.");
+  } catch (error) {
+    logger.error(`Error loading or drawing background image: ${error}`);
+  }
+
+  // キャンバスのボーダーを描画
+  ctx.strokeStyle = "#0099ff"; // ボーダーの色
+  ctx.lineWidth = 5; // ボーダーの太さ
+  ctx.strokeRect(0, 0, width, height); // キャンバス全体にボーダーを描画
+
+  // ウェルカムテキスト「Welcome to the server,」を描画
+  ctx.fillStyle = "#ffffff"; // テキストの色
+  ctx.font = "28pt Roboto"; // フォントとサイズ
+  ctx.fillText("Welcome to the server,", width / 2.5, height / 3.5); // テキストの位置
+
+  // ユーザー名のフォントサイズを動的に調整し、描画
+  // ユーザー名が長すぎる場合に、画像からはみ出さないようにフォントサイズを縮小します。
+  let fontSize = 50;
+  ctx.font = `${fontSize}pt Noto_Sans`;
+  while (ctx.measureText(userName + "!").width > width - 300 && fontSize > 10) {
+    fontSize -= 5; // 5ptずつフォントサイズを縮小
+    ctx.font = `${fontSize}pt Noto_Sans`;
+  }
+  ctx.fillText(userName + "!", width / 2.5, height / 1.8); // ユーザー名を描画
+
+  // 円形にクリップされたアバターを描画
+  logger.info(`Fetching avatar from URL: ${userAvatarURL}`);
+  try {
+    const response = await fetch(userAvatarURL);
+    logger.debug(`Avatar fetch response status: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch avatar: ${response.statusText}`);
+    }
+    const avatarBuffer = Buffer.from(await response.arrayBuffer());
+    logger.debug(`Avatar buffer length: ${avatarBuffer.byteLength}`);
+    const avatarImg = await loadImage(avatarBuffer);
+    logger.info("Avatar image decoded successfully.");
+
+    // 円形のクリッピングパスを作成
+    ctx.save(); // 現在のキャンバスの状態を保存
+    ctx.beginPath(); // 新しいパスを開始
+    ctx.arc(125, 125, 100, 0, Math.PI * 2, true); // 中心 (125, 125)、半径 100 の円
+    ctx.closePath(); // パスを閉じる
+    ctx.clip(); // このパスで描画をクリップ
+
+    // クリップされた円の中にアバター画像を描画
+    ctx.drawImage(avatarImg, 25, 25, 200, 200); // アバター画像を描画
+    logger.info("Avatar image drawn successfully (clipped).");
+    ctx.restore(); // 保存したキャンバスの状態を復元（クリッピングを解除）
+  } catch (error) {
+    logger.error(`Error loading or drawing avatar image: ${error}`);
+  }
+
+  // 生成された画像をPNG形式のBufferとして返却
+  return canvas.toBuffer("image/png");
 }

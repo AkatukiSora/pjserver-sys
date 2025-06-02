@@ -1,0 +1,10 @@
+# Default ignore
+*
+
+# Required items
+! src/
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig*.json
+! scripts/
