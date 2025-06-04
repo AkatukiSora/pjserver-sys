@@ -21,11 +21,11 @@ spec:
       - name: pjserver-sys # コンテナの名前
         image: akatukisora/pjserver-sys:v0.0 # 使用するコンテナイメージ
         env: # Secretから個別の環境変数を注入
-        - name: token
+        - name: credential
           valueFrom:
             secretKeyRef:
               name: pjserver-secret # 参照するSecretの名前
-              key: token # Secret内のキー
+              key: credential # Secret内のキー
         - name: clientID
           valueFrom:
             secretKeyRef:
