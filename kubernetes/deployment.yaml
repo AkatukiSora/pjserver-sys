@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pjserver-sys
+  labels:
+    app: pjserver-sys
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pjserver-sys
+  template:
+    metadata:
+      labels:
+        app: pjserver-sys
+    spec:
+      containers:
+        - name: pjserver-sys
+          image: akatukisora/pjserver-sys # ここにDockerイメージ名を指定してください。タグはkustomization.yamlで指定します。
+          resources:
+            requests:
+              memory: "256Mi" # 必要に応じて調整
+              cpu: "250m" # 必要に応じて調整
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 3000 # アプリケーションがリッスンするポート
+          env:
+            - name: token
+              valueFrom:
+                secretKeyRef:
+                  name: pjserver-sys-secrets
+                  key: token
+            - name: clientID
+              valueFrom:
+                secretKeyRef:
+                  name: pjserver-sys-secrets
+                  key: clientID
+            - name: guildID
+              valueFrom:
+                secretKeyRef:
+                  name: pjserver-sys-secrets
+                  key: guildID
+            - name: mode
+              valueFrom:
+                secretKeyRef:
+                  name: pjserver-sys-secrets
+                  key: mode
