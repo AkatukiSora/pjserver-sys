@@ -17,6 +17,9 @@ import {
 import welcomeimage from "./functions/welcomeimage.js";
 import processInteraction, { loadCommands } from "./interaction.js";
 
+//起動時にコマンドのデプロイを行う
+import { deployCommand } from "./deploy-commands.js"; // 認証情報をインポート
+deployCommand() // 例外はそのままunhandledにして処理させる
 /**
  * Discordクライアントを設定します。
  * 必要なインテント（GatewayIntentBits）を指定して、ボットが特定のイベントを受信できるようにします。
@@ -100,7 +103,7 @@ if (
   process.env.mode === "2"
 ) {
   logger.info(`ボット起動モード: ${process.env.mode}`);
-  client.login(process.env.token);
+  client.login(process.env.credential);
 } else {
   logger.fatal("実行環境が指定されていないか不正です。プロセスを終了します。");
   process.exit(1);

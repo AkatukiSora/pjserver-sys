@@ -40,7 +40,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.token);
 
 // コマンドのデプロイ処理を実行
 // 即時実行関数として定義し、非同期処理でコマンドをDiscordに登録します。
-(async () => {
+const deployCommand = async () => {
   // 環境変数 `clientID` および `guildID` の存在チェック
   // コマンドを特定のギルドにデプロイするために必要なIDが設定されているか確認します。
   if (!process.env.clientID || !process.env.guildID) {
@@ -86,4 +86,8 @@ const rest = new REST({ version: "10" }).setToken(process.env.token);
     // コマンドデプロイ中に発生したエラーをキャッチし、ログに出力します。
     logger.error(error);
   }
-})();
+};
+
+export {
+  deployCommand, // デプロイ関数をエクスポート
+}
