@@ -1,0 +1,50 @@
+# AkatukiSora/k8s-deploysリポジトリからArgoCDでデプロイ
+# Secretは別途作成する必要がある
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pjserver-sys # デプロイメントの名前
+  labels:
+    app: pjserver-sys # デプロイメントのラベル
+spec:
+  replicas: 1 # 常に1つのPodを維持
+  selector:
+    matchLabels:
+      app: pjserver-sys # Podのラベルと一致させる
+  template:
+    metadata:
+      labels:
+        app: pjserver-sys # Podのラベル
+    spec:
+      containers:
+      - name: pjserver-sys # コンテナの名前
+        image: akatukisora/pjserver-sys:v0.0 # 使用するコンテナイメージ
+        env: # Secretから個別の環境変数を注入
+        - name: token
+          valueFrom:
+            secretKeyRef:
+              name: pjserver-secret # 参照するSecretの名前
+              key: token # Secret内のキー
+        - name: clientID
+          valueFrom:
+            secretKeyRef:
+              name: pjserver-secret
+              key: clientID
+        - name: guildID
+          valueFrom:
+            secretKeyRef:
+              name: pjserver-secret
+              key: guildID
+        - name: mode
+          valueFrom:
+            secretKeyRef:
+              name: pjserver-secret
+              key: mode
+        resources: # リソースの要求と制限
+          requests:
+            cpu: "500m" # 500mCPUを要求
+            memory: "256Mi" # 256MiBメモリを要求
+          limits:
+            cpu: "1.3" # 1.3CPUを制限
+            memory: "512Mi" # 512MiBメモリを制限
