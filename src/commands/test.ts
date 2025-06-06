@@ -4,7 +4,7 @@ import {
   CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
-import welcomeimage from "../functions/welcomeimage.js";
+import { Container } from "typedi";
 
 export default {
   data: new SlashCommandBuilder()
@@ -15,6 +15,9 @@ export default {
   async execute(interaction: CommandInteraction) {
     // 返信
     //interaction.deferReply();
+    const welcomeimage = Container.get<
+      (user: string, avatar: string) => Promise<Buffer>
+    >("welcomeimage");
     const attachment = new AttachmentBuilder(
       await welcomeimage(
         interaction.user.displayName,

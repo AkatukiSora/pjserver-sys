@@ -1,5 +1,5 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import runMode from "../functions/runMode.js";
+import { Container } from "typedi";
 
 export default {
   data: new SlashCommandBuilder()
@@ -9,6 +9,7 @@ export default {
     .setDescription("Pingの値を返します"),
   async execute(interaction: CommandInteraction) {
     // 返信
+    const runMode = Container.get<() => string>("runMode");
     const mode = runMode();
     await interaction.reply({
       embeds: [

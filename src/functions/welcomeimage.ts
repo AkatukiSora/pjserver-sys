@@ -1,6 +1,5 @@
-import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
-import fetch from "node-fetch";
-import fs from "fs-extra";
+import { GlobalFonts } from "@napi-rs/canvas";
+import { Container } from "typedi";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import logger from "../logger.js"; // ロガーをインポート
@@ -53,6 +52,10 @@ export default async function generateWelcomeImage(
   userName: string,
   userAvatarURL: string,
 ): Promise<Buffer> {
+  const createCanvas = Container.get<typeof import("@napi-rs/canvas").createCanvas>("createCanvas");
+  const loadImage = Container.get<typeof import("@napi-rs/canvas").loadImage>("loadImage");
+  const fetch = Container.get<typeof import("node-fetch").default>("fetch");
+  const readFile = Container.get<typeof import("fs-extra").readFile>("readFile");
   const width = 700; // キャンバスの幅
   const height = 250; // キャンバスの高さ
 
@@ -63,7 +66,7 @@ export default async function generateWelcomeImage(
   // 背景画像を読み込み、キャンバスに描画
   logger.info(`Loading background image from: ${backgroundPath}`);
   try {
-    const backgroundBuffer = await fs.readFile(backgroundPath);
+    const backgroundBuffer = await readFile(backgroundPath);
     logger.debug(
       `Background image bytes length: ${backgroundBuffer.byteLength}`,
     );
