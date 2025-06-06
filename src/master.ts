@@ -2,6 +2,7 @@
 import "dotenv/config";
 // ロガーモジュールのロード
 import logger from "./logger.js";
+import "./container.js";
 // Discord.jsの必要なモジュールをロード
 import {
   AttachmentBuilder,
