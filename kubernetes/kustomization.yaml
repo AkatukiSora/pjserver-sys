@@ -5,4 +5,4 @@ resources:
   - onepassword-item.yaml
 images:
   - name: akatukisora/pjserver-sys # deployment.yamlで指定したイメージ名と一致させる
-    newTag: v0.0.1 # CI/CDでこのタグをビルド番号やコミットハッシュなどに置き換える
+    newTag: v0.0 # CI/CDでこのタグをビルド番号やコミットハッシュなどに置き換える
