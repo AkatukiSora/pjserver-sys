@@ -122,7 +122,7 @@ jobs:
           load: true
           tags: ${{ env.DOCKER_IMAGE_NAME }}:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha
 
       - name: Run Docker Scout
         uses: docker/scout-action@v1
