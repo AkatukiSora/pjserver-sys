@@ -53,8 +53,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:cache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:cache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha
 
       - name: Generate and attest provenance
         uses: actions/attest-build-provenance@v1
