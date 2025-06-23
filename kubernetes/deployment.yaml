@@ -12,6 +12,8 @@ spec:
   selector:
     matchLabels:
       app: pjserver-sys # Podのラベルと一致させる
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -20,6 +22,7 @@ spec:
       containers:
         - name: pjserver-sys # コンテナの名前
           image: akatukisora/pjserver-sys:v0.0 # 使用するコンテナイメージ
+          imagePullPolicy: Always
           env: # Secretから個別の環境変数を注入
             - name: credential
               valueFrom:
