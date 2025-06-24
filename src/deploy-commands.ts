@@ -18,8 +18,8 @@ import { Command } from "./types/command.js"; // Commandインターフェース
 
 // 環境変数 `token` の存在チェック
 // Botの認証に必要なトークンが設定されていない場合、エラーをログに出力しプロセスを終了します。
-if (!process.env.token) {
-  logger.error("No token provided in environment variables.");
+if (!process.env.credential) {
+  logger.error("No credential provided in environment variables.");
   process.exit(1);
 }
 
@@ -36,7 +36,7 @@ for (const command of commandModules) {
 
 // Discord REST APIクライアントの初期化
 // Discord APIとの通信を行うためのクライアントを設定し、Botのトークンをセットします。
-const rest = new REST({ version: "10" }).setToken(process.env.token);
+const rest = new REST({ version: "10" }).setToken(process.env.credential);
 
 // コマンドのデプロイ処理を実行
 // 即時実行関数として定義し、非同期処理でコマンドをDiscordに登録します。
