@@ -1,14 +1,14 @@
 ## build runner
-FROM node:lts-alpine as build-runner
+FROM node:lts-alpine AS build-runner
 
 # Set temp directory
-WORKDIR /tmp/app
+WORKDIR /builder/app
 
 # Move package.json
-COPY package.json .
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN npm install
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 # Move source files
 COPY src ./src
@@ -18,19 +18,19 @@ COPY tsconfig.json   .
 RUN npm run build
 
 ## production runner
-FROM node:lts-alpine as prod-runner
+FROM node:lts-alpine AS prod-runner
 
 # Set work directory
 WORKDIR /app
 
 # Copy package.json from build-runner
-COPY --from=build-runner /tmp/app/package.json /app/package.json
+COPY --from=build-runner /builder/app/package.json /app/package.json
 
 # Install dependencies
-RUN npm install --omit=dev
+RUN corepack enable pnpm && pnpm install --prod
 
 # Move build files
-COPY --from=build-runner /tmp/app/build /app/build
+COPY --from=build-runner /builder/app/build /app/build
 
 # Start bot
-CMD [ "npm", "run", "start" ]
+CMD [ "pnpm", "run", "start" ]

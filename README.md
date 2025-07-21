@@ -1,99 +1,141 @@
-<div>
-  <p align="center">
-    <a href="https://discordx.js.org" target="_blank" rel="nofollow">
-      <img src="https://discordx.js.org/discordx.svg" width="546" />
-    </a>
-  </p>
-  <p align="center">
-    <a href="https://discordx.js.org/discord"
-      ><img
-        src="https://img.shields.io/discord/874802018361950248?color=5865F2&logo=discord&logoColor=white"
-        alt="Discord server"
-    /></a>
-    <a href="https://www.npmjs.com/package/discordx"
-      ><img
-        src="https://img.shields.io/npm/v/discordx.svg?maxAge=3600"
-        alt="NPM version"
-    /></a>
-    <a href="https://www.npmjs.com/package/discordx"
-      ><img
-        src="https://img.shields.io/npm/dt/discordx.svg?maxAge=3600"
-        alt="NPM downloads"
-    /></a>
-    <a href="https://github.com/discordx-ts/discordx/actions"
-      ><img
-        src="https://github.com/discordx-ts/discordx/workflows/Build/badge.svg"
-        alt="Build status"
-    /></a>
-    <a href="https://www.paypal.me/vijayxmeena"
-      ><img
-        src="https://img.shields.io/badge/donate-paypal-F96854.svg"
-        alt="paypal"
-    /></a>
-  </p>
-  <p align="center">
-    <b> Create a discord bot with TypeScript and Decorators! </b>
-  </p>
-</div>
+# プロセカ民営公園 Discord Bot (v2)
 
-# 📖 Introduction
+古いDiscord.jsベースのBotをdiscordx.jsにリプレイスしたバージョンです。
 
-A blank template with one command and one event, This is a useful template if you want to quickly spin up a project.
+## 機能
 
-# 🏗 Development
+### スラッシュコマンド
+- `/ping` - ボットのping測定と実行環境の表示
+- `/restart` - ボットの再起動
+- `/test` - ウェルカム画像の生成テスト
+- `/button` - ボタン操作のテスト
 
-```
-npm install
-npm run dev
+### 自動機能
+- **ギルドメンバー参加時の自動ウェルカム** - 新しいメンバーがサーバーに参加すると、カスタムウェルカム画像とメッセージを送信
+- **ログ出力** - 全ての動作をlog4jsで詳細にログ出力
+- **エラーハンドリング** - 未処理の例外やシグナルハンドリング
+
+## セットアップ
+
+### 1. 依存関係のインストール
+```bash
+pnpm install
 ```
 
-If you want to use [Nodemon](https://nodemon.io/) to auto-reload while in development:
+### 2. 環境変数の設定
+`.env`ファイルを作成し、以下の内容を設定：
 
+```env
+# Discord Bot設定
+BOT_TOKEN=your_bot_token_here
+
+# Discord アプリケーションID（オプション）
+CLIENT_ID=your_client_id_here
+
+# ギルドID（サーバーID）（オプション）
+GUILD_ID=your_guild_id_here
+
+# 実行モード設定
+# メイン: 1
+# スタンバイ: 2  
+# 開発環境: 0
+MODE=0
 ```
-npm run watch
+
+### 3. ビルド
+```bash
+pnpm run build
 ```
 
-# 💻 Production
+### 4. 実行
+```bash
+# 開発環境での実行
+pnpm run dev
 
+# 本番環境での実行
+pnpm run start
 ```
-npm install --production
-npm run build
-npm run start
+
+## 環境設定
+
+### 実行モード
+- `MODE=0`: 開発環境
+- `MODE=1`: メイン環境
+- `MODE=2`: スタンバイ環境
+
+### ウェルカムチャンネル
+現在、ウェルカムメッセージを送信するチャンネルIDは`853904783000469535`にハードコードされています。
+必要に応じて`src/events/common.ts`の`guildMemberAdd`イベント内で変更してください。
+
+## 技術スタック
+
+- **discordx** - Discord.jsのデコレータベースフレームワーク
+- **Discord.js v14** - Discord API ライブラリ
+- **TypeScript** - 型安全な開発環境
+- **@napi-rs/canvas** - ウェルカム画像生成
+- **log4js** - 構造化ログ出力
+- **dotenv** - 環境変数管理
+
+## 開発
+
+### ディレクトリ構造
+```
+src/
+├── commands/           # スラッシュコマンドとボタンハンドラー
+│   ├── slashes.ts     # 基本スラッシュコマンド
+│   └── buttons.ts     # ボタンインタラクション
+├── events/            # Discordイベントハンドラー
+│   └── common.ts      # 基本イベント（ready, guildMemberAdd等）
+├── utils/             # ユーティリティ関数
+│   ├── logger.ts      # ログ設定
+│   ├── runMode.ts     # 実行モード取得
+│   └── welcomeimage.ts # ウェルカム画像生成
+├── resource/          # 静的リソース
+│   ├── Fonts/         # フォントファイル
+│   └── png/           # 画像ファイル
+└── main.ts            # メインエントリーポイント
 ```
 
-# 🐋 Docker
+### 古いバージョンからの移行
 
-To start your application:
+このバージョンは古い`old/`ディレクトリにあるDiscord.jsベースのBotの機能を完全に踏襲しており：
 
+- 同じコマンド機能
+- 同じウェルカム画像生成機能
+- 同じログ機能
+- 同じエラーハンドリング
+- 同じ環境設定
+
+ただし、より現代的なdiscordx.jsのデコレータベースアーキテクチャを使用してより保守しやすくなっています。
+
+### ウォッチモード（開発用）
+```bash
+# ファイル変更を監視して自動再起動
+pnpm run watch
 ```
+
+## Docker
+
+DockerとDocker Composeにも対応しています：
+
+```bash
+# Docker Composeでの起動
 docker-compose up -d
-```
 
-To shut down your application:
-
-```
+# Docker Composeでの停止
 docker-compose down
+
+# ログの確認
+docker-compose logs -f
 ```
 
-To view your application's logs:
+## 注意事項
 
-```
-docker-compose logs
-```
+- **コマンドデプロイ**: discordx.jsの`bot.initApplicationCommands()`により自動的にスラッシュコマンドがデプロイされるため、手動でのコマンドデプロイは不要です
+- **環境変数**: 本番環境では必ず適切な`MODE`値を設定してください
+- **ウェルカムチャンネル**: 現在チャンネルIDがハードコードされているため、必要に応じて設定を変更してください
 
-For the full command list please view the [Docker Documentation](https://docs.docker.com/engine/reference/commandline/cli/).
+## 参考リンク
 
-# 📜 Documentation
-
-- [discordx.js.org](https://discordx.js.org)
-- [Tutorials (dev.to)](https://dev.to/samarmeena/series/14317)
-
-# ☎️ Need help?
-
-- [Check frequently asked questions](https://discordx.js.org/docs/faq)
-- [Check examples](https://github.com/discordx-ts/discordx/tree/main/packages/discordx/examples)
-- Ask in the community [Discord server](https://discordx.js.org/discord)
-
-# 💖 Thank you
-
-You can support [discordx](https://www.npmjs.com/package/discordx) by giving it a [GitHub](https://github.com/discordx-ts/discordx) star.
+- [discordx.js 公式ドキュメント](https://discordx.js.org)
+- [Discord.js v14 ドキュメント](https://discord.js.org/#/docs/discord.js/14.17.3/general/welcome)
