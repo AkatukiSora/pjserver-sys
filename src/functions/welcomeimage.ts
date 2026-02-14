@@ -34,12 +34,20 @@ const backgroundPath = path.join(
   "join.png",
 );
 
-// グローバルフォントの登録
-// 画像生成に使用するカスタムフォントをシステムに登録します。
-logger.info(`Registering font Roboto from: ${fontRobotoPath}`);
-GlobalFonts.registerFromPath(fontRobotoPath, "Roboto");
-logger.info(`Registering font Noto_Sans from: ${fontNotoSansPath}`);
-GlobalFonts.registerFromPath(fontNotoSansPath, "Noto_Sans");
+let isWelcomeImageInitialized = false;
+
+export function initWelcomeImageAssets(): void {
+  if (isWelcomeImageInitialized) {
+    return;
+  }
+
+  logger.info(`Registering font Roboto from: ${fontRobotoPath}`);
+  GlobalFonts.registerFromPath(fontRobotoPath, "Roboto");
+  logger.info(`Registering font Noto_Sans from: ${fontNotoSansPath}`);
+  GlobalFonts.registerFromPath(fontNotoSansPath, "Noto_Sans");
+
+  isWelcomeImageInitialized = true;
+}
 
 /**
  * ユーザーのウェルカム画像を生成します。
@@ -53,6 +61,12 @@ export default async function generateWelcomeImage(
   userName: string,
   userAvatarURL: string,
 ): Promise<Buffer> {
+  if (!isWelcomeImageInitialized) {
+    throw new Error(
+      "Welcome image assets are not initialized. Call initWelcomeImageAssets() first.",
+    );
+  }
+
   const width = 700; // キャンバスの幅
   const height = 250; // キャンバスの高さ
 

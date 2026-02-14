@@ -1,4 +1,4 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import runMode from "../functions/runMode.js";
 
 export default {
@@ -7,7 +7,7 @@ export default {
     .setName("ping")
     // コマンドの説明文
     .setDescription("Pingの値を返します"),
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     // 返信
     const mode = runMode();
     await interaction.reply({

@@ -1,18 +1,11 @@
 import logger from "./logger.js";
-import {
-  Collection,
-  Client,
-  Interaction, // Interaction型に戻す
-} from "discord.js";
-import { Command } from "./types/command.js"; // Commandインターフェースをインポート
-
-// Import command modules
-import pingCommand from "./commands/ping.js";
-import restartCommand from "./commands/restart.js";
-import testCommand from "./commands/test.js";
+import { Client, Collection, Interaction } from "discord.js";
+import type { Command } from "./types/command.js";
+import { commands } from "./commands/index.js";
+import { safeReply } from "./utils/safe-reply.js";
 
 // コマンドモジュールの配列
-const commandModules: Command[] = [pingCommand, restartCommand, testCommand];
+const commandModules: Command[] = commands;
 
 /**
  * クライアントにコマンドをロードする関数。
@@ -40,7 +33,7 @@ export function loadCommands(client: Client): void {
  * @param interaction - Discordからのインタラクションオブジェクト。
  */
 export default async function processInteraction(
-  interaction: Interaction, // 型をInteractionに戻す
+  interaction: Interaction,
 ): Promise<void> {
   // コマンドでなかった場合、またはチャットコマンドでなかった場合は処理を終了
   if (!interaction.isChatInputCommand()) return;
@@ -51,7 +44,7 @@ export default async function processInteraction(
   // コマンドが見つからない場合は警告をログに出力し、エラーメッセージを返信
   if (!command) {
     logger.warn(`[WARN] 存在しないコマンドを参照: ${interaction.commandName}`);
-    await interaction.reply({
+    await safeReply(interaction, {
       embeds: [
         {
           title: "エラー",
@@ -62,6 +55,26 @@ export default async function processInteraction(
       ephemeral: true, // エラーメッセージは一時的に表示
     });
     return;
+  }
+
+  if (command.requiredPermissions?.length) {
+    const hasPermissions = interaction.memberPermissions?.has(
+      command.requiredPermissions,
+    );
+
+    if (!hasPermissions) {
+      await safeReply(interaction, {
+        embeds: [
+          {
+            title: "権限エラー",
+            description: "このコマンドを実行する権限がありません。",
+            color: 0xff0000,
+          },
+        ],
+        ephemeral: true,
+      });
+      return;
+    }
   }
 
   // クールダウン処理の開始
@@ -93,7 +106,7 @@ export default async function processInteraction(
       );
       const expiredTimestamp = Math.round(expirationTime / 1_000);
       // クールダウンメッセージをユーザーに返信
-      await interaction.reply({
+      await safeReply(interaction, {
         content: `\`${command.data.name}\`はクールダウン中です。\n次に実行できるようになるのは <t:${expiredTimestamp}:R> です。`,
         ephemeral: true, // 一時的なメッセージとして表示
       });
@@ -113,7 +126,7 @@ export default async function processInteraction(
     logger.error(`[ERROR] コマンド実行中にエラーが発生しました: ${error}`);
     // ユーザーにエラーメッセージを返信
     try {
-      await interaction.reply({
+      await safeReply(interaction, {
         embeds: [
           {
             title: "エラー",

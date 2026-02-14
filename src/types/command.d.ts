@@ -1,4 +1,8 @@
-import { SlashCommandBuilder, CommandInteraction } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  PermissionResolvable,
+  SlashCommandBuilder,
+} from "discord.js";
 
 /**
  * Discordスラッシュコマンドの構造を定義するインターフェース。
@@ -15,5 +19,7 @@ export interface Command {
    * Discordからのインタラクションオブジェクトを引数にとります。
    * @param interaction - コマンドインタラクションオブジェクト。
    */
-  execute: (interaction: CommandInteraction) => Promise<void>;
+  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  cooldown?: number;
+  requiredPermissions?: PermissionResolvable[];
 }

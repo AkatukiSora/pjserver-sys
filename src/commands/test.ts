@@ -1,7 +1,7 @@
 import {
+  ChatInputCommandInteraction,
   EmbedBuilder,
   AttachmentBuilder,
-  CommandInteraction,
   SlashCommandBuilder,
 } from "discord.js";
 import welcomeimage from "../functions/welcomeimage.js";
@@ -12,7 +12,7 @@ export default {
     .setName("test")
     // コマンドの説明文
     .setDescription("ウェルカム画像を生成します"),
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     // 返信
     //interaction.deferReply();
     const attachment = new AttachmentBuilder(
