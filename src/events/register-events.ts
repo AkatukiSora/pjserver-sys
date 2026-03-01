@@ -1,106 +1,56 @@
-import {
-  AttachmentBuilder,
-  Client,
-  EmbedBuilder,
-  Events,
-  GuildMember,
-  Interaction,
-  TextChannel,
-} from "discord.js";
-import type { AppConfig } from "../config.js";
-import welcomeimage from "../functions/welcomeimage.js";
-import processInteraction from "../interaction.js";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import type { Client } from "discord.js";
 import logger from "../logger.js";
+import type { RuntimeContext } from "../runtime-context.js";
+import type { BotEvent } from "./types.js";
 
-async function onGuildMemberAdd(
-  member: GuildMember,
-  config: AppConfig,
-): Promise<void> {
-  const attachment = new AttachmentBuilder(
-    await welcomeimage(
-      member.user.displayName,
-      member.user.displayAvatarURL({ extension: "png" }),
-    ),
-  ).setName("welcome-image.png");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const eventModulesDirectory = path.join(__dirname, "handlers");
 
-  const embed = new EmbedBuilder()
-    .setTitle("welcome to プロセカ民営公園")
-    .setImage("attachment://welcome-image.png")
-    .setDescription(
-      `ようこそ！<@${member.user.id}>さん！\n\n※サーバーガイドはチャンネル一覧の一番上にあります\n\nサーバーガイドに従ってやるべきことを片付けましょう\n特に <#942837557807419482> で挨拶をすることはコミュニティになじむ第一歩です\n気楽にいきましょう`,
-    );
+async function loadEventModules(): Promise<BotEvent[]> {
+  const entries = await readdir(eventModulesDirectory, { withFileTypes: true });
 
-  const targetChannel = member.guild.channels.cache.get(
-    config.welcomeChannelID,
+  const modules = await Promise.all(
+    entries
+      .filter((entry) => entry.isFile())
+      .filter(
+        (entry) =>
+          entry.name.endsWith(".event.ts") || entry.name.endsWith(".event.js"),
+      )
+      .map(async (entry) => {
+        const moduleURL = pathToFileURL(
+          path.join(eventModulesDirectory, entry.name),
+        ).href;
+        const module = (await import(moduleURL)) as { default?: BotEvent };
+        return module.default;
+      }),
   );
 
-  if (!(targetChannel instanceof TextChannel)) {
-    logger.error(
-      "指定されたwelcomeチャンネルが見つからないか、テキストチャンネルではありません。",
-    );
-    return;
-  }
-
-  await targetChannel.send({
-    content: `<@${member.user.id}>`,
-    embeds: [embed],
-    files: [attachment],
-  });
+  return modules.filter((event): event is BotEvent => Boolean(event));
 }
 
-export function registerClientEvents(client: Client, config: AppConfig): void {
-  client.on(Events.InteractionCreate, async (interaction: Interaction) => {
-    await processInteraction(interaction);
-  });
+export async function registerClientEvents(
+  client: Client,
+  context: RuntimeContext,
+  options: { events?: BotEvent[] } = {},
+): Promise<void> {
+  const events = options.events ?? (await loadEventModules());
 
-  client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
-    try {
-      await onGuildMemberAdd(member, config);
-    } catch (error) {
-      logger.error(`ウェルカムメッセージ送信中にエラー: ${error}`);
-    }
-  });
+  for (const event of events) {
+    const handler = async (...args: unknown[]): Promise<void> => {
+      await event.execute(client, context, ...(args as never));
+    };
 
-  client.once(Events.ClientReady, (readyClient: Client) => {
-    if (!readyClient.user) {
-      logger.fatal(
-        "ログイン失敗: クライアントユーザーが見つかりませんでした。",
-      );
-      process.exit(1);
+    if (event.once) {
+      client.once(event.name, handler as never);
+      continue;
     }
 
-    logger.info(`ログイン成功: User=${readyClient.user.tag}`);
-    readyClient.user.setActivity("多分正常稼働中");
-  });
+    client.on(event.name, handler as never);
+  }
 
-  client.on(Events.Warn, (warn: string) => {
-    logger.warn(`[WARN] Discord.js警告: ${warn}`);
-  });
-
-  client.on(Events.Error, (error: Error) => {
-    logger.error(`[ERROR] Discord.jsエラー: ${error.message}`, error);
-  });
-
-  process.on("uncaughtException", (err: Error, origin: string) => {
-    logger.fatal(
-      `[FATAL] 未処理の例外をキャッチ: ${err.message}\n例外発生元: ${origin}`,
-      err,
-    );
-    try {
-      client.destroy();
-    } catch (error) {
-      logger.error(`[ERROR] クライアント破棄中にエラーが発生: ${error}`);
-    }
-    setTimeout(() => process.exit(1), 5_000);
-  });
-
-  process.on("SIGTERM", () => {
-    try {
-      client.destroy();
-      logger.info("サーバーを停止します。シグナルによる正常終了処理です。");
-    } catch (error) {
-      logger.error(`[ERROR] サーバー停止処理中にエラーが発生: ${error}`);
-      setTimeout(() => process.exit(1), 5_000);
-    }
-  });
+  logger.info(`Registered ${events.length} event handlers.`);
 }

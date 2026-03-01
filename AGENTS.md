@@ -62,7 +62,8 @@ Repository guide for coding agents working in `pjserver-sys`.
 - Test runner: Vitest (`vitest.config.ts`, Node environment).
 - Test locations: `tests/unit/**/*.test.ts`, `tests/integration/**/*.test.ts`.
 - Integration tests should mock side-effect libraries (e.g. `discord.js`, canvas, network clients).
-- CI currently enforces lint + typecheck + Docker build; tests can be added to CI in a follow-up.
+- CI (`ci.yml`) enforces lint + typecheck + Docker build on PRs.
+- Deploy workflow (`deploy.yml`) enforces lint + typecheck + test before image push on `master`/`v*`.
 
 ## CI/Automation Expectations
 
@@ -71,6 +72,14 @@ Repository guide for coding agents working in `pjserver-sys`.
   - `pnpm run lint`
   - `pnpm tsc --noEmit`
   - Docker image build test
+- Deploy workflow (`.github/workflows/deploy.yml`) runs:
+  - `pnpm install --frozen-lockfile --ignore-scripts`
+  - `pnpm run lint`
+  - `pnpm tsc --noEmit`
+  - `pnpm run test`
+  - Docker image build/push + provenance attestation
+  - release metadata artifact publish (`release-metadata.json`)
+  - optional `repository_dispatch` to `AkatukiSora/k8s-deploys` when `K8S_DEPLOYS_REPO_TOKEN` is configured
 - Pre-commit hook (`.husky/pre-commit`) runs:
   - `pnpm lint-staged`
   - `pnpm depcheck`
@@ -123,11 +132,13 @@ Repository guide for coding agents working in `pjserver-sys`.
 
 ### Command Module Contract
 
-- Command modules should export default object with:
+- Command modules should export factory functions returning `Command`.
+- Returned `Command` includes:
   - `data`: `SlashCommandBuilder`
   - `execute(interaction)`: async handler returning `Promise<void>`
   - optional `cooldown` number (seconds)
-- Register commands through `src/interaction.ts` + `src/deploy-commands.ts`.
+  - optional `requiredPermissions`
+- Register commands through `src/commands/index.ts` and load via `loadCommands`.
 - Keep command replies user-safe and localized to existing style.
 
 ### Logging And Error Handling

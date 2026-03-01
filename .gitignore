@@ -121,3 +121,6 @@ dist
 .vscode-test
 
 # End of gitignore
+
+# Local agent state
+.serena/

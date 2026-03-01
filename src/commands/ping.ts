@@ -1,31 +1,32 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import runMode from "../functions/runMode.js";
+import { getRunModeLabel, type AppConfig } from "../config.js";
+import type { Command } from "../types/command.js";
 
-export default {
-  data: new SlashCommandBuilder()
-    // コマンドの名前
-    .setName("ping")
-    // コマンドの説明文
-    .setDescription("Pingの値を返します"),
-  async execute(interaction: ChatInputCommandInteraction) {
-    // 返信
-    const mode = runMode();
-    await interaction.reply({
-      embeds: [
-        {
-          title: "ping",
-          description: `${mode}\nAPI Endpoint Ping: ...`,
-        },
-      ],
-    });
-    const msg = await interaction.fetchReply();
-    await interaction.editReply({
-      embeds: [
-        {
-          title: "ping",
-          description: `${mode}\nAPI Endpoint Ping: ${msg.createdTimestamp - interaction.createdTimestamp}ms`,
-        },
-      ],
-    });
-  },
-};
+export function createPingCommand(config: AppConfig): Command {
+  return {
+    data: new SlashCommandBuilder()
+      .setName("ping")
+      .setDescription("Pingの値を返します"),
+    async execute(interaction: ChatInputCommandInteraction) {
+      const modeLabel = getRunModeLabel(config.mode);
+      await interaction.reply({
+        embeds: [
+          {
+            title: "ping",
+            description: `${modeLabel}\nAPI Endpoint Ping: ...`,
+          },
+        ],
+      });
+
+      const message = await interaction.fetchReply();
+      await interaction.editReply({
+        embeds: [
+          {
+            title: "ping",
+            description: `${modeLabel}\nAPI Endpoint Ping: ${message.createdTimestamp - interaction.createdTimestamp}ms`,
+          },
+        ],
+      });
+    },
+  };
+}

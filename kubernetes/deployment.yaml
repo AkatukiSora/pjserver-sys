@@ -44,6 +44,11 @@ spec:
                 secretKeyRef:
                   name: pjserver-secret
                   key: mode
+            - name: welcomeChannelID
+              valueFrom:
+                secretKeyRef:
+                  name: pjserver-secret
+                  key: welcomeChannelID
           resources: # リソースの要求と制限
             requests:
               cpu: "500m" # 500mCPUを要求
