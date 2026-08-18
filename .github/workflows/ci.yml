@@ -28,18 +28,11 @@ jobs:
         with:
           run_install: false
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version-file: .nvmrc
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -47,8 +40,17 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Check formatting
+        run: pnpm run format
+
       - name: Type Check
         run: pnpm tsc --noEmit
+
+      - name: Build
+        run: pnpm run build:prod
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high
 
   codeql-analysis:
     name: Analyze (${{ matrix.language }})

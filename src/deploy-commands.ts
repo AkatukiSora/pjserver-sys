@@ -90,4 +90,4 @@ const deployCommand = async () => {
 
 export {
   deployCommand, // デプロイ関数をエクスポート
-}
+};
