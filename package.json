@@ -16,7 +16,8 @@
     "format": "prettier ./src --check",
     "format:fix": "prettier ./src --write",
     "test": "tsx --test test/**/*.test.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "smoke:artifact": "node scripts/smoke-artifact.mjs",
     "copy-static": "tsx scripts/copy-static.ts",
     "prepare": "husky"
   },

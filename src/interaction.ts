@@ -48,6 +48,11 @@ export default async function processInteraction(
     return;
   }
   timestamps.set(interaction.user.id, now);
+  setTimeout(() => {
+    if (timestamps.get(interaction.user.id) === now) {
+      timestamps.delete(interaction.user.id);
+    }
+  }, cooldown * 1_000);
   try {
     await command.execute(interaction);
   } catch (error) {

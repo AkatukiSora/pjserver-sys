@@ -15,6 +15,7 @@ pnpm run format
 pnpm run typecheck
 pnpm run test
 pnpm run build:prod
+pnpm run smoke:artifact
 pnpm audit --prod
 ```
 
