@@ -72,6 +72,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.validate-release.outputs.tag }}
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -84,7 +92,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.validate-release.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha
 
@@ -114,7 +123,79 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - name: Refuse automatic release downgrade
+        id: release-order
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          current_tag="$(sed -n -E 's/^[[:space:]]*newTag:[[:space:]]*([^[:space:]#]+).*/\1/p' kubernetes/kustomization.yaml)"
+          if [[ -z "$current_tag" ]]; then
+            echo 'kubernetes/kustomization.yaml has no images.newTag.' >&2
+            exit 1
+          fi
+
+          # v0.0 is the pre-release-automation placeholder and may be
+          # promoted once. All later automated promotions must be monotonic.
+          if [[ "$current_tag" == 'v0.0' ]]; then
+            echo 'update=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          result="$(node - "$current_tag" "$RELEASE_TAG" <<'NODE'
+          const [current, release] = process.argv.slice(2);
+          const semver = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:(?:0|[1-9]\d*)|(?:\d*[A-Za-z-][0-9A-Za-z-]*))(?:\.(?:(?:0|[1-9]\d*)|(?:\d*[A-Za-z-][0-9A-Za-z-]*)))*))?$/;
+          const parse = (tag) => {
+            const match = tag.match(semver);
+            if (!match) throw new Error(`not an exact release tag: ${tag}`);
+            return { core: match.slice(1, 4).map(Number), pre: match[4]?.split('.') };
+          };
+          const compare = (left, right) => {
+            for (let i = 0; i < 3; i += 1) {
+              if (left.core[i] !== right.core[i]) return left.core[i] < right.core[i] ? -1 : 1;
+            }
+            if (!left.pre && !right.pre) return 0;
+            if (!left.pre) return 1;
+            if (!right.pre) return -1;
+            const length = Math.max(left.pre.length, right.pre.length);
+            for (let i = 0; i < length; i += 1) {
+              if (left.pre[i] === undefined) return -1;
+              if (right.pre[i] === undefined) return 1;
+              const leftNumeric = /^(0|[1-9]\d*)$/.test(left.pre[i]);
+              const rightNumeric = /^(0|[1-9]\d*)$/.test(right.pre[i]);
+              if (leftNumeric && rightNumeric) {
+                const delta = BigInt(left.pre[i]) - BigInt(right.pre[i]);
+                if (delta !== 0n) return delta < 0n ? -1 : 1;
+              } else if (leftNumeric !== rightNumeric) {
+                return leftNumeric ? -1 : 1;
+              } else if (left.pre[i] !== right.pre[i]) {
+                return left.pre[i] < right.pre[i] ? -1 : 1;
+              }
+            }
+            return 0;
+          };
+          console.log(compare(parse(release), parse(current)));
+          NODE
+          )"
+          case "$result" in
+            1) echo 'update=true' >> "$GITHUB_OUTPUT" ;;
+            0)
+              echo "Production manifest already points to ${RELEASE_TAG}."
+              echo 'update=false' >> "$GITHUB_OUTPUT"
+              ;;
+            -1)
+              echo "Refusing automatic downgrade from ${current_tag} to ${RELEASE_TAG}. Use a manual manifest commit for rollback." >&2
+              exit 1
+              ;;
+            *)
+              echo "Unexpected SemVer comparison result: ${result}" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Set production image tag
+        if: steps.release-order.outputs.update == 'true'
         shell: bash
         env:
           RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
@@ -125,6 +206,7 @@ jobs:
           grep -F "image: ${DOCKER_IMAGE_NAME}:${RELEASE_TAG}" /tmp/pjserver-sys-manifest.yaml
 
       - name: Commit and push manifest
+        if: steps.release-order.outputs.update == 'true'
         shell: bash
         env:
           RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
@@ -145,14 +227,24 @@ jobs:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
       packages: write
+      attestations: write
     steps:
       - name: Checkout master
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=master
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -161,10 +253,18 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build and push master snapshot
+        id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKER_IMAGE_NAME }}:master
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha
+
+      - name: Generate and attest provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_IMAGE_NAME }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}

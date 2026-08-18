@@ -41,6 +41,9 @@ Deploy workflow は、タグが `master` の履歴上にあることを確認し
 `master` へコミットすると、Argo CD が差分を検知して rollout します。`:master` は開発用
 スナップショットとして別ジョブで公開されますが、production は追従しません。タグ検証・
 image build・attestation のいずれかが失敗した場合、manifest は更新されません。
+複数リリースの完了順が前後しても、workflow は manifest 上の厳密 SemVer より新しいタグに
+しか自動更新しません。同一タグは何もしません。古いタグへの rollback は次の手動操作だけで
+行います。
 
 roll back は、戻したい既存の完全一致タグを `kubernetes/kustomization.yaml` の `newTag` に
 変更して `master` へコミットします。Argo CD が同じ経路で同期します。イメージを再公開する
