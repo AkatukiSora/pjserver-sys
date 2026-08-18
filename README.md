@@ -50,6 +50,11 @@ git tag v1.2.3                 # または v1.2.3-rc.1
 git push origin v1.2.3
 ```
 
+既存タグのDeployが失敗した場合は、タグを削除・作り直し・上書きせず、Actions の **Deploy**
+workflowを `master` から手動実行し、`release_tag` に既存の完全一致タグ（例: `v1.2.3`）を指定します。
+この経路はタグのSemVer、`refs/tags/<tag>` の存在、そのpeeled commitが`master`の履歴にあることを
+検証し、そのタグのソースだけをbuildします。手動release時は`:master` snapshotをbuildしません。
+
 Deploy workflow は、タグが `master` の履歴上にあることを確認してから、その**完全一致タグ**
 のイメージを build/push し、provenance attestation の成功後だけ
 `kubernetes/kustomization.yaml` の `images.newTag` を更新します。bot がその変更を
