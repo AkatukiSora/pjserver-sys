@@ -1,6 +1,6 @@
 {
   "name": "pjserver",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "プロセカ民営公園の専属Botです。",
   "private": true,
   "type": "module",
@@ -15,6 +15,8 @@
     "lint:fix": "eslint ./src --ext .ts --fix",
     "format": "prettier ./src --check",
     "format:fix": "prettier ./src --write",
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
     "copy-static": "tsx scripts/copy-static.ts",
     "prepare": "husky"
   },

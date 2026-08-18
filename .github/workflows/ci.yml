@@ -44,7 +44,10 @@ jobs:
         run: pnpm run format
 
       - name: Type Check
-        run: pnpm tsc --noEmit
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
 
       - name: Build
         run: pnpm run build:prod
