@@ -1,5 +1,9 @@
 import { Collection, type Client, type Interaction } from "discord.js";
-import { cooldownExpiresAt, scheduleCooldownEviction } from "./cooldown.js";
+import {
+  cooldownExpiresAt,
+  scheduleCooldownEviction,
+  type Schedule,
+} from "./cooldown.js";
 import { respondToInteractionError } from "./interaction-response.js";
 import logger from "./logger.js";
 import { createCommandCollection } from "./commands/registry.js";
@@ -12,6 +16,7 @@ export function loadCommands(client: Client): void {
 export default async function processInteraction(
   interaction: Interaction,
   now = Date.now(),
+  schedule: Schedule = setTimeout,
 ): Promise<void> {
   if (!interaction.isChatInputCommand()) return;
   const command = interaction.client.commands.get(interaction.commandName);
@@ -48,7 +53,13 @@ export default async function processInteraction(
     return;
   }
   timestamps.set(interaction.user.id, now);
-  scheduleCooldownEviction(timestamps, interaction.user.id, now, cooldown);
+  scheduleCooldownEviction(
+    timestamps,
+    interaction.user.id,
+    now,
+    cooldown,
+    schedule,
+  );
   try {
     await command.execute(interaction);
   } catch (error) {
