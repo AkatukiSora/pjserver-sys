@@ -118,6 +118,7 @@ jobs:
       - validate-release
       - release-image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Serialize only the write to master: a newer release must not be lost to
     # a concurrent manifest commit.
     concurrency:
@@ -224,14 +225,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # shellcheck disable=SC2034
-          branch="release/promotion-${RELEASE_TAG}"
+          branch="release/promotion-${RELEASE_TAG}-${GITHUB_RUN_ID}"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          existing="$(gh pr list --base master --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          existing="$(gh pr list --base master --state open --search "in:title release ${RELEASE_TAG}" --json number --jq '.[0].number // empty')"
           if [[ -n "$existing" ]]; then
-            echo "Promotion PR #${existing} already exists; refusing duplicate release."
-            exit 0
+            echo "Promotion PR #${existing} already exists; refusing duplicate release until it is resolved." >&2
+            exit 1
           fi
           git switch -c "$branch"
           git add kubernetes/kustomization.yaml
@@ -239,14 +239,17 @@ jobs:
           git push origin "HEAD:refs/heads/${branch}"
           pr_url="$(gh pr create --base master --head "$branch" --title "chore(deploy): release ${RELEASE_TAG}" --body "Automated manifest-only promotion for ${RELEASE_TAG}.")"
           gh workflow run ci.yml --ref "$branch" -f ref="$branch"
-          for attempt in {1..30}; do
-            run_id="$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          for _ in {1..30}; do
+            run_id="$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch --limit 1 --json databaseId,headSha --jq '.[] | select(.headSha != null) | .databaseId' | head -1)"
             [[ -n "$run_id" ]] && break
             sleep 2
           done
           [[ -n "${run_id:-}" ]] || { echo 'Timed out waiting for promotion CI to start.' >&2; exit 1; }
           gh run watch "$run_id" --exit-status
+          gh pr checks "$pr_url" --watch --fail-fast
           gh pr merge "$pr_url" --merge --delete-branch
+          merged="$(gh pr view "$pr_url" --json state,mergeCommit --jq 'if .state == "MERGED" and .mergeCommit != null then .mergeCommit.oid else empty end')"
+          [[ -n "$merged" ]] || { echo 'Promotion PR did not reach MERGED state.' >&2; exit 1; }
 
   snapshot-image:
     name: Build and push master snapshot

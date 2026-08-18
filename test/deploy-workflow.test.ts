@@ -36,5 +36,9 @@ test("Deploy promotes through a PR and explicitly dispatches CI", () => {
   assert.match(workflow, /gh pr create --base master/);
   assert.match(workflow, /gh workflow run ci\.yml/);
   assert.match(workflow, /gh run watch "\$run_id" --exit-status/);
+  assert.match(workflow, /gh pr checks "\$pr_url" --watch --fail-fast/);
+  assert.match(workflow, /GITHUB_RUN_ID/);
+  assert.match(workflow, /timeout-minutes: 30/);
+  assert.match(workflow, /Promotion PR did not reach MERGED state/);
   assert.doesNotMatch(workflow, /git push origin HEAD:master/);
 });
