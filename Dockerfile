@@ -2,20 +2,20 @@
 FROM node:22-slim@sha256:2f3571619daafc6b53232ebf2fcc0817c1e64795e92de317c1684a915d13f1a5 AS builder
 
 # Set environment variables
-ENV TINI_VERSION=v0.19.0
 ENV HUSKY=0
 
-
-# Add Tini
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+# Use Debian's architecture-appropriate, repository-verified tini package.
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes tini \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
 # Copy package files and pnpm lockfile
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Enable Corepack and install dependencies using pnpm
-RUN corepack enable && pnpm install --ignore-scripts
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy the rest of the application code
 COPY . .
@@ -36,7 +36,7 @@ FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:581893ba58980f0b4c7444d7
 ENV IS_DOCKER=1
 
 # Copy tini from the builder stage
-COPY --from=builder --chmod=+x /tini /tini
+COPY --from=builder /usr/bin/tini /tini
 ENTRYPOINT [ "/tini", "--" ]
 WORKDIR /app
 

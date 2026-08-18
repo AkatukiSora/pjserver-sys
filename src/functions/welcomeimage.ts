@@ -1,5 +1,4 @@
 import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
-import fetch from "node-fetch";
 import fs from "fs-extra";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

@@ -19,7 +19,7 @@ import processInteraction, { loadCommands } from "./interaction.js";
 
 //起動時にコマンドのデプロイを行う
 import { deployCommand } from "./deploy-commands.js"; // 認証情報をインポート
-deployCommand() // 例外はそのままunhandledにして処理させる
+deployCommand(); // 例外はそのままunhandledにして処理させる
 /**
  * Discordクライアントを設定します。
  * 必要なインテント（GatewayIntentBits）を指定して、ボットが特定のイベントを受信できるようにします。
