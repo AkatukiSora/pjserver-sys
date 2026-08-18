@@ -1,6 +1,6 @@
 {
   "name": "pjserver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "プロセカ民営公園の専属Botです。",
   "private": true,
   "type": "module",
