@@ -1,6 +1,12 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing exact SemVer tag to release
+        required: true
+        type: string
   push:
     branches:
       - master
@@ -17,7 +23,7 @@ env:
 jobs:
   validate-release:
     name: Validate release tag
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,6 +33,7 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.release_tag || github.ref }}
           fetch-depth: 0
 
       - name: Validate tag and master ancestry
@@ -34,13 +41,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
+          tag="${{ inputs.release_tag || github.ref_name }}"
 
           # SemVer 2.0.0, with an optional prerelease. Build metadata is not
           # accepted because Docker tags cannot contain '+'.
           if ! node -e '
             const tag = process.argv[1];
-            const semver = /^v(?:0|[1-9]\\d*)\.(?:0|[1-9]\\d*)\.(?:0|[1-9]\\d*)(?:-(?:(?:0|[1-9]\\d*)|(?:\\d*[A-Za-z-][0-9A-Za-z-]*))(?:\.(?:(?:0|[1-9]\\d*)|(?:\\d*[A-Za-z-][0-9A-Za-z-]*)))*)?$/;
+            const semver = /^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*)|(?:\d*[A-Za-z-][0-9A-Za-z-]*))(?:\.(?:(?:0|[1-9]\d*)|(?:\d*[A-Za-z-][0-9A-Za-z-]*)))*)?$/;
             process.exit(semver.test(tag) ? 0 : 1);
           ' "$tag"; then
             echo "Release tags must be vX.Y.Z or vX.Y.Z-prerelease (SemVer 2.0.0): $tag" >&2
@@ -48,7 +55,7 @@ jobs:
           fi
 
           git fetch --no-tags origin master
-          tag_commit="$(git rev-list -n 1 "$GITHUB_REF")"
+          tag_commit="$(git rev-list -n 1 "$tag")"
           if ! git merge-base --is-ancestor "$tag_commit" origin/master; then
             echo "Refusing release: $tag does not point to a commit reachable from master." >&2
             exit 1
@@ -68,6 +75,8 @@ jobs:
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.tag }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
