@@ -12,11 +12,26 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm run lint
 pnpm run format
+pnpm run typecheck
+pnpm run test
 pnpm run build:prod
+pnpm run smoke:artifact
 pnpm audit --prod
 ```
 
 Botの起動に必要な環境変数は [`env.sample`](./env.sample) を参照してください。
+
+`pnpm run build` 後は `node dist/master.js` で起動できます。起動時は、設定を検証してから
+コマンドをDiscordへ同期し、その成功後にログインします。`credential`、`clientID`、`guildID` と
+`mode`（`0` / `1` / `2`）はすべて必須です。
+
+## 設計とテスト
+
+設定の検証は `src/config.ts`、コマンドの単一registryは `src/commands/registry.ts`、interactionの
+cooldownと安全なエラー返信はそれぞれ `src/cooldown.ts` と `src/interaction-response.ts` に分離しています。
+welcome payloadの組み立てと送信も `src/welcome.ts` に集約し、従来のチャンネルID・メッセージ内容は維持しています。
+
+ユニットテストはNode 22標準の `node:test` を `tsx` で実行し、Discordやネットワークへ接続しません。
 
 ## リリースとデプロイ
 

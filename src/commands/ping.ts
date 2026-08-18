@@ -9,7 +9,7 @@ export default {
     .setDescription("Pingの値を返します"),
   async execute(interaction: CommandInteraction) {
     // 返信
-    const mode = runMode();
+    const mode = runMode(process.env.mode);
     await interaction.reply({
       embeds: [
         {
