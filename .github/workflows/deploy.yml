@@ -247,9 +247,8 @@ jobs:
           [[ -n "${run_id:-}" ]] || { echo 'Timed out waiting for promotion CI to start.' >&2; exit 1; }
           gh run watch "$run_id" --exit-status
           gh pr checks "$pr_url" --watch --fail-fast
-          gh pr merge "$pr_url" --merge --delete-branch
-          merged="$(gh pr view "$pr_url" --json state,mergeCommit --jq 'if .state == "MERGED" and .mergeCommit != null then .mergeCommit.oid else empty end')"
-          [[ -n "$merged" ]] || { echo 'Promotion PR did not reach MERGED state.' >&2; exit 1; }
+          echo "Promotion PR validated: ${pr_url}"
+          echo 'A repository-rules-eligible Code Owner must approve and merge this PR.'
 
   snapshot-image:
     name: Build and push master snapshot
