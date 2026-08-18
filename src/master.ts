@@ -6,6 +6,7 @@ import welcomeimage from "./functions/welcomeimage.js";
 import processInteraction, { loadCommands } from "./interaction.js";
 import { registerLifecycleHandlers } from "./lifecycle.js";
 import logger from "./logger.js";
+import { deployBeforeClient } from "./startup.js";
 import { sendWelcome, WELCOME_CHANNEL_ID } from "./welcome.js";
 
 export function createClient(): Client {
@@ -46,7 +47,11 @@ export function registerClientEvents(client: Client): void {
 
 export async function start(): Promise<void> {
   const config = parseConfig(process.env);
-  const client = createClient();
+  logger.info(`ボット起動モード: ${config.mode}`);
+  const client = await deployBeforeClient(
+    () => deployCommand(config),
+    createClient,
+  );
   registerClientEvents(client);
   registerLifecycleHandlers({
     destroy: () => client.destroy(),
@@ -55,8 +60,6 @@ export async function start(): Promise<void> {
     exit: (code) => process.exit(code),
     on: (signal, listener) => process.on(signal, listener),
   });
-  logger.info(`ボット起動モード: ${config.mode}`);
-  await deployCommand(config);
   await client.login(config.credential);
 }
 
