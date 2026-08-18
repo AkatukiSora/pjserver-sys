@@ -1,5 +1,5 @@
 import { Collection, type Client, type Interaction } from "discord.js";
-import { cooldownExpiresAt } from "./cooldown.js";
+import { cooldownExpiresAt, scheduleCooldownEviction } from "./cooldown.js";
 import { respondToInteractionError } from "./interaction-response.js";
 import logger from "./logger.js";
 import { createCommandCollection } from "./commands/registry.js";
@@ -48,11 +48,7 @@ export default async function processInteraction(
     return;
   }
   timestamps.set(interaction.user.id, now);
-  setTimeout(() => {
-    if (timestamps.get(interaction.user.id) === now) {
-      timestamps.delete(interaction.user.id);
-    }
-  }, cooldown * 1_000);
+  scheduleCooldownEviction(timestamps, interaction.user.id, now, cooldown);
   try {
     await command.execute(interaction);
   } catch (error) {
