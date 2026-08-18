@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - master
+    # The release job changes only this file.  Do not build another :master
+    # snapshot for that manifest-only commit.
+    paths-ignore:
+      - kubernetes/kustomization.yaml
     tags:
       - "v*"
 
@@ -11,34 +15,62 @@ env:
   DOCKER_IMAGE_NAME: akatukisora/pjserver-sys
 
 jobs:
-  docker-build-and-push:
+  validate-release:
+    name: Validate release tag
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag and master ancestry
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+
+          # SemVer 2.0.0, with an optional prerelease. Build metadata is not
+          # accepted because Docker tags cannot contain '+'.
+          if ! node -e '
+            const tag = process.argv[1];
+            const semver = /^v(?:0|[1-9]\\d*)\.(?:0|[1-9]\\d*)\.(?:0|[1-9]\\d*)(?:-(?:(?:0|[1-9]\\d*)|(?:\\d*[A-Za-z-][0-9A-Za-z-]*))(?:\.(?:(?:0|[1-9]\\d*)|(?:\\d*[A-Za-z-][0-9A-Za-z-]*)))*)?$/;
+            process.exit(semver.test(tag) ? 0 : 1);
+          ' "$tag"; then
+            echo "Release tags must be vX.Y.Z or vX.Y.Z-prerelease (SemVer 2.0.0): $tag" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin master
+          tag_commit="$(git rev-list -n 1 "$GITHUB_REF")"
+          if ! git merge-base --is-ancestor "$tag_commit" origin/master; then
+            echo "Refusing release: $tag does not point to a commit reachable from master." >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  release-image:
+    name: Build and attest release image
+    needs: validate-release
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: write
+      contents: read
       packages: write
-      security-events: write
-      attestations: write # attestationの作成に必要な権限を追加
-
-    name: Docker Build and Push
-    runs-on: ubuntu-latest
-
+      attestations: write
     steps:
-      - name: Checkout code
+      - name: Checkout release tag
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern=v{{major}}.{{minor}}.{{patch}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -46,14 +78,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push exact release image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ needs.validate-release.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha
 
@@ -62,3 +93,78 @@ jobs:
         with:
           subject-name: ${{ env.DOCKER_IMAGE_NAME }}
           subject-digest: ${{ steps.build-and-push.outputs.digest }}
+
+  update-production-manifest:
+    name: Update production manifest
+    needs:
+      - validate-release
+      - release-image
+    runs-on: ubuntu-latest
+    # Serialize only the write to master: a newer release must not be lost to
+    # a concurrent manifest commit.
+    concurrency:
+      group: production-manifest-master
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set production image tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          sed -i -E "s|^([[:space:]]*newTag:).*|\\1 ${RELEASE_TAG}|" kubernetes/kustomization.yaml
+          kubectl kustomize kubernetes > /tmp/pjserver-sys-manifest.yaml
+          grep -F "image: ${DOCKER_IMAGE_NAME}:${RELEASE_TAG}" /tmp/pjserver-sys-manifest.yaml
+
+      - name: Commit and push manifest
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kubernetes/kustomization.yaml
+          if git diff --cached --quiet; then
+            echo "Production manifest already points to ${RELEASE_TAG}."
+            exit 0
+          fi
+          git commit -m "chore(deploy): release ${RELEASE_TAG}"
+          git push origin HEAD:master
+
+  snapshot-image:
+    name: Build and push master snapshot
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push master snapshot
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:master
+          cache-from: type=gha
+          cache-to: type=gha
