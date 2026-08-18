@@ -233,7 +233,7 @@ jobs:
 
   snapshot-image:
     name: Build and push master snapshot
-    if: github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
