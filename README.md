@@ -65,6 +65,11 @@ image build・attestation のいずれかが失敗した場合、manifest は更
 しか自動更新しません。同一タグは何もしません。古いタグへの rollback は次の手動操作だけで
 行います。
 
+repository rulesがdirect pushを禁止する環境では、Deployはmanifest-only promotion PRを作成します。
+そのPRはCIをworkflow dispatchで明示実行し、成功を確認してからmergeします。失敗・timeout・既存の
+promotion PRがある場合はfail closedし、manifestを変更しません。repository rulesがCode Owner
+approvalを要求するため、CI検証済みpromotion PRはCode Ownerが通常のmerge commitで承認・mergeします。
+
 roll back は、戻したい既存の完全一致タグを `kubernetes/kustomization.yaml` の `newTag` に
 変更して `master` へコミットします。Argo CD が同じ経路で同期します。イメージを再公開する
 必要はありません。

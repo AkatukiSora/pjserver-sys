@@ -118,6 +118,7 @@ jobs:
       - validate-release
       - release-image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Serialize only the write to master: a newer release must not be lost to
     # a concurrent manifest commit.
     concurrency:
@@ -125,6 +126,8 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: write
+      pull-requests: write
+      actions: write
     steps:
       - name: Checkout master
         uses: actions/checkout@v4
@@ -214,22 +217,38 @@ jobs:
           kubectl kustomize kubernetes > /tmp/pjserver-sys-manifest.yaml
           grep -F "image: ${DOCKER_IMAGE_NAME}:${RELEASE_TAG}" /tmp/pjserver-sys-manifest.yaml
 
-      - name: Commit and push manifest
+      - name: Create, validate, and merge promotion PR
         if: steps.release-order.outputs.update == 'true'
         shell: bash
         env:
           RELEASE_TAG: ${{ needs.validate-release.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          branch="release/promotion-${RELEASE_TAG}-${GITHUB_RUN_ID}"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add kubernetes/kustomization.yaml
-          if git diff --cached --quiet; then
-            echo "Production manifest already points to ${RELEASE_TAG}."
-            exit 0
+          existing="$(gh pr list --base master --state open --search "in:title release ${RELEASE_TAG}" --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "Promotion PR #${existing} already exists; refusing duplicate release until it is resolved." >&2
+            exit 1
           fi
+          git switch -c "$branch"
+          git add kubernetes/kustomization.yaml
           git commit -m "chore(deploy): release ${RELEASE_TAG}"
-          git push origin HEAD:master
+          git push origin "HEAD:refs/heads/${branch}"
+          pr_url="$(gh pr create --base master --head "$branch" --title "chore(deploy): release ${RELEASE_TAG}" --body "Automated manifest-only promotion for ${RELEASE_TAG}.")"
+          gh workflow run ci.yml --ref "$branch" -f ref="$branch"
+          for _ in {1..30}; do
+            run_id="$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch --limit 1 --json databaseId,headSha --jq '.[] | select(.headSha != null) | .databaseId' | head -1)"
+            [[ -n "$run_id" ]] && break
+            sleep 2
+          done
+          [[ -n "${run_id:-}" ]] || { echo 'Timed out waiting for promotion CI to start.' >&2; exit 1; }
+          gh run watch "$run_id" --exit-status
+          gh pr checks "$pr_url" --watch --fail-fast
+          echo "Promotion PR validated: ${pr_url}"
+          echo 'A repository-rules-eligible Code Owner must approve and merge this PR.'
 
   snapshot-image:
     name: Build and push master snapshot
