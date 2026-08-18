@@ -29,3 +29,12 @@ test("manual releases use an existing tag and do not build a master snapshot", (
     /if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/master'/,
   );
 });
+
+test("Deploy promotes through a PR and explicitly dispatches CI", () => {
+  assert.match(workflow, /pull-requests: write/);
+  assert.match(workflow, /actions: write/);
+  assert.match(workflow, /gh pr create --base master/);
+  assert.match(workflow, /gh workflow run ci\.yml/);
+  assert.match(workflow, /gh run watch "\$run_id" --exit-status/);
+  assert.doesNotMatch(workflow, /git push origin HEAD:master/);
+});
